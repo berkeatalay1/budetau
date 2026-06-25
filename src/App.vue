@@ -2,7 +2,6 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useThemeStore } from './stores/theme'
 import { useQuickAddStore } from './stores/quickAdd'
-import WindowChrome from './components/WindowChrome.vue'
 import SidebarNav from './components/SidebarNav.vue'
 import AppFab from './components/AppFab.vue'
 import QuickAddModal from './components/QuickAddModal.vue'
@@ -30,10 +29,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
     Position: relative so AppFab (position:absolute) anchors to this container.
   -->
   <div class="relative flex h-screen flex-col overflow-hidden bg-bg text-primary font-sans">
-    <!-- macOS-style title bar -->
-    <WindowChrome />
-
-    <!-- Body: sidebar + scrollable main -->
+    <!-- Body: sidebar + scrollable main (the native OS title bar is the window chrome) -->
     <div class="flex flex-1 overflow-hidden">
       <SidebarNav />
 

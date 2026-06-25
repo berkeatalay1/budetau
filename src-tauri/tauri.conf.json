@@ -12,9 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "budetau",
-        "width": 800,
-        "height": 600
+        "title": "Budetau — budget.db",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600
       }
     ],
     "security": {

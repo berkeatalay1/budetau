@@ -3,14 +3,20 @@ import { computed, onMounted, ref } from 'vue'
 import { useTransactionStore } from '../stores/transaction'
 import { useBudgetStore } from '../stores/budget'
 import { useCategoryStore } from '../stores/category'
+import { useQuickAddStore } from '../stores/quickAdd'
 import HeroSummary from '../components/dashboard/HeroSummary.vue'
 import BudgetCard from '../components/dashboard/BudgetCard.vue'
 import AlertBanner from '../components/dashboard/AlertBanner.vue'
+import AddBudgetModal from '../components/dashboard/AddBudgetModal.vue'
 
 // ─── stores ───────────────────────────────────────────────────────────────────
 const txStore = useTransactionStore()
 const budgetStore = useBudgetStore()
 const categoryStore = useCategoryStore()
+const quickAdd = useQuickAddStore()
+
+// ─── budget creation modal ─────────────────────────────────────────────────────
+const showAddBudget = ref(false)
 
 // ─── month navigation ─────────────────────────────────────────────────────────
 const today = new Date()
@@ -154,12 +160,14 @@ onMounted(async () => {
       <div class="flex gap-[10px] justify-center">
         <button
           class="inline-flex items-center gap-2 bg-accent text-card font-semibold text-[13px] px-[18px] py-[11px] rounded-control border-none cursor-pointer hover:bg-accent/90 transition-colors"
+          @click="quickAdd.open('expense')"
         >
           <span class="text-[15px] leading-none">+</span>
           Add a transaction
         </button>
         <button
           class="font-semibold text-[13px] text-primary bg-card border border-border px-[18px] py-[11px] rounded-control cursor-pointer hover:bg-bg transition-colors"
+          @click="showAddBudget = true"
         >
           Set a budget
         </button>
@@ -225,9 +233,12 @@ onMounted(async () => {
     <div v-if="budgetRows.length > 0">
       <div class="flex items-center justify-between mb-[14px]">
         <h2 class="text-[16px] font-semibold text-primary leading-none">Budgets</h2>
-        <span class="text-[13px] font-semibold text-accent cursor-pointer hover:underline">
+        <button
+          class="text-[13px] font-semibold text-accent cursor-pointer hover:underline"
+          @click="showAddBudget = true"
+        >
           Manage budgets
-        </span>
+        </button>
       </div>
 
       <div class="grid grid-cols-3 gap-[14px]">
@@ -245,9 +256,15 @@ onMounted(async () => {
     <!-- No budgets yet (but has transactions) -->
     <div v-else class="rounded-card border border-border bg-card p-8 text-center shadow-card mt-2">
       <p class="text-secondary text-body">No budgets set yet.</p>
-      <button class="mt-4 font-semibold text-[13px] text-accent hover:underline cursor-pointer">
+      <button
+        class="mt-4 font-semibold text-[13px] text-accent hover:underline cursor-pointer"
+        @click="showAddBudget = true"
+      >
         Set a budget
       </button>
     </div>
   </div>
+
+  <!-- Budget creation modal — available from empty state, header link, and no-budgets card -->
+  <AddBudgetModal :open="showAddBudget" @close="showAddBudget = false" />
 </template>
