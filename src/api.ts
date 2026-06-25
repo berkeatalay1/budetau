@@ -42,3 +42,10 @@ export const createBudget = (budget: NewBudget): Promise<Budget> =>
 
 export const createTransaction = (transaction: NewTransaction): Promise<Transaction> =>
   invoke('create_transaction', { transaction })
+
+// --- Update / delete -----------------------------------------------------
+
+export const updateTransaction = (transaction: Transaction): Promise<Transaction> =>
+  invoke('update_transaction', { transaction })
+
+export const deleteTransaction = (id: number): Promise<void> => invoke('delete_transaction', { id })

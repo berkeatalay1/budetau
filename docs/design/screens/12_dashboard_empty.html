@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html><head><meta charset='utf-8'><style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .scr { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style></head>
+<body style='margin:0;background:#e9ebee;padding:24px'>
+<div style="position:absolute; left:2640px; top:1780px; width:1200px" class="scr" data-screen-label="Dashboard · Empty">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Dashboard — Empty (first-run)</div>
+  <div style="position:relative; background:#fff; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <div style="height:40px; background:#fff; border-bottom:1px solid #eef0f3; display:flex; align-items:center; padding:0 14px; gap:8px">
+      <div style="width:12px; height:12px; border-radius:50%; background:#ff5f57"></div>
+      <div style="width:12px; height:12px; border-radius:50%; background:#febc2e"></div>
+      <div style="width:12px; height:12px; border-radius:50%; background:#28c840"></div>
+      <div style="flex:1; text-align:center; font:500 12px/1 inherit; color:#9ca3af">Budetau — budget.db</div>
+      <div style="width:54px"></div>
+    </div>
+    <div style="display:flex; align-items:stretch; min-height:620px">
+      <div style="width:228px; background:#fbfbfc; border-right:1px solid #eef0f3; padding:18px 14px; display:flex; flex-direction:column">
+        <div style="display:flex; align-items:center; gap:10px; padding:4px 8px 22px">
+          <div style="width:28px; height:28px; border-radius:8px; background:#2563eb; position:relative; flex:none"><div style="position:absolute; left:8px; top:8px; width:12px; height:12px; border-radius:50%; border:2.5px solid #fff"></div></div>
+          <div style="font:700 16px/1 inherit; color:#1f2937; letter-spacing:-0.01em">Budetau</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:3px">
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; background:#eff6ff; color:#2563eb">
+            <div style="width:16px; height:16px; display:grid; grid-template-columns:1fr 1fr; gap:2px; flex:none"><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div></div>
+            <span style="font:600 13px/1 inherit">Dashboard</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563">
+            <div style="width:16px; height:16px; display:flex; flex-direction:column; justify-content:center; gap:3px; flex:none"><div style="height:2px; width:100%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:75%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:90%; background:#9ca3af; border-radius:2px"></div></div>
+            <span style="font:500 13px/1 inherit">Transactions</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563">
+            <div style="width:16px; height:16px; border-radius:50%; border:2px solid #9ca3af; position:relative; flex:none"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:5px; height:5px; border-radius:50%; background:#9ca3af"></div></div>
+            <span style="font:500 13px/1 inherit">Settings</span>
+          </div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="border-top:1px solid #eef0f3; padding-top:14px; display:flex; align-items:center; gap:10px">
+          <div style="width:30px; height:30px; border-radius:50%; background:#e0e7ff; color:#2563eb; font:600 12px/30px inherit; text-align:center; flex:none">P</div>
+          <div style="flex:1; min-width:0"><div style="font:600 12px/1.3 inherit; color:#1f2937">Personal</div><div style="font:400 11px/1.3 inherit; color:#9ca3af">Local file</div></div>
+        </div>
+      </div>
+      <div style="flex:1; background:#f9fafb; display:flex; align-items:center; justify-content:center; padding:40px">
+        <div style="text-align:center; max-width:380px">
+          <div style="width:72px; height:72px; border-radius:18px; background:#eff6ff; display:flex; align-items:center; justify-content:center; margin:0 auto 22px"><div style="width:30px; height:30px; display:grid; grid-template-columns:1fr 1fr; gap:4px"><div style="background:#bcd3fb; border-radius:3px"></div><div style="background:#bcd3fb; border-radius:3px"></div><div style="background:#bcd3fb; border-radius:3px"></div><div style="background:#2563eb; border-radius:3px"></div></div></div>
+          <div style="font:700 20px/1.3 inherit; color:#1f2937; margin-bottom:8px">Welcome to Budetau</div>
+          <div style="font:400 14px/1.6 inherit; color:#6b7280; margin-bottom:24px">Your money lives in one private file on this Mac — no accounts, no cloud. Log your first transaction to start seeing your month at a glance.</div>
+          <div style="display:flex; gap:10px; justify-content:center">
+            <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:11px 18px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:8px"><span style="font-size:15px; line-height:1">+</span>Add a transaction</button>
+            <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:11px 18px; border-radius:8px; cursor:pointer">Set a budget</button>
+          </div>
+          <div style="font:500 12px/1 inherit; color:#9ca3af; margin-top:18px">Tip: press <span style="background:#eef0f3; border:1px solid #e0e2e6; border-radius:5px; padding:2px 6px; font-weight:600; color:#4b5563">⌘K</span> anytime to add</div>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute; right:22px; bottom:22px; width:50px; height:50px; border-radius:50%; background:#2563eb; box-shadow:0 6px 18px rgba(37,99,235,.45); z-index:5"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:18px; height:2.5px; background:#fff; border-radius:2px"></div><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:2.5px; height:18px; background:#fff; border-radius:2px"></div></div>
+  </div>
+</div>
+</body></html>

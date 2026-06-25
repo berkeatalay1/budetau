@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="372207fa-dba7-4485-9b9c-b2e537e9434c"></script>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .scr { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</helmet>
+
+<!-- ===================== TITLE ===================== -->
+<div style="position:absolute; left:0; top:0; width:1240px" class="scr">
+  <div style="display:flex; align-items:center; gap:14px">
+    <div style="width:34px; height:34px; border-radius:9px; background:#2563eb; position:relative; flex:none">
+      <div style="position:absolute; left:9px; top:9px; width:16px; height:16px; border-radius:50%; border:3px solid #fff"></div>
+    </div>
+    <div style="font:700 28px/1.1 inherit; color:#111827; letter-spacing:-0.01em">Budetau</div>
+    <div style="font:500 15px/1.1 inherit; color:#9ca3af; padding-left:14px; border-left:1px solid #d1d5db">Budget Planner · UI Design System</div>
+  </div>
+  <div style="font:500 14px/1.6 inherit; color:#6b7280; margin-top:12px; max-width:900px">Local-first desktop budget planner — calm, fast, trustworthy. Foundations &amp; components, then high-fidelity screens in light + dark with empty / populated / error states. Desktop target 1200px · narrow breakpoint 720px.</div>
+</div>
+
+<!-- ===================== FOUNDATIONS: COLORS LIGHT ===================== -->
+<div style="position:absolute; left:0; top:150px; width:600px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Color tokens — Light</div>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); padding:22px; border:1px solid #eef0f3">
+    <div style="display:flex; flex-direction:column; gap:2px">
+      <!-- header -->
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; padding:0 6px 8px; font:600 11px/1 inherit; color:#9ca3af; text-transform:uppercase; letter-spacing:.06em">
+        <div></div><div>Token · role</div><div>Hex</div>
+      </div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #f1f3f5"><div style="height:30px; border-radius:8px; background:#1f2937; border:1px solid rgba(0,0,0,.06)"></div><div><div style="font:600 13px/1.3 inherit; color:#1f2937">--primary</div><div style="font:400 12px/1.3 inherit; color:#9ca3af">Primary text, headings</div></div><div class="num" style="font:500 12px/1 inherit; color:#6b7280">#1f2937</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #f1f3f5"><div style="height:30px; border-radius:8px; background:#4b5563"></div><div><div style="font:600 13px/1.3 inherit; color:#1f2937">--secondary</div><div style="font:400 12px/1.3 inherit; color:#9ca3af">Secondary text</div></div><div class="num" style="font:500 12px/1 inherit; color:#6b7280">#4b5563</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #f1f3f5"><div style="height:30px; border-radius:8px; background:#f9fafb; border:1px solid #e5e7eb"></div><div><div style="font:600 13px/1.3 inherit; color:#1f2937">--bg</div><div style="font:400 12px/1.3 inherit; color:#9ca3af">App background</div></div><div class="num" style="font:500 12px/1 inherit; color:#6b7280">#f9fafb</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #f1f3f5"><div style="height:30px; border-radius:8px; background:#fff; border:1px solid #e5e7eb"></div><div><div style="font:600 13px/1.3 inherit; color:#1f2937">--card</div><div style="font:400 12px/1.3 inherit; color:#9ca3af">Card surfaces</div></div><div class="num" style="font:500 12px/1 inherit; color:#6b7280">#ffffff</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #f1f3f5"><div style="height:30px; border-radius:8px; background:#e5e7eb"></div><div><div style="font:600 13px/1.3 inherit; color:#1f2937">--border</div><div style="font:400 12px/1.3 inherit; color:#9ca3af">Dividers, card borders</div></div><div class="num" style="font:500 12px/1 inherit; color:#6b7280">#e5e7eb</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #f1f3f5"><div style="height:30px; border-radius:8px; background:#2563eb"></div><div><div style="font:600 13px/1.3 inherit; color:#1f2937">--accent</div><div style="font:400 12px/1.3 inherit; color:#9ca3af">Primary actions, links, focus</div></div><div class="num" style="font:500 12px/1 inherit; color:#6b7280">#2563eb</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #f1f3f5"><div style="height:30px; border-radius:8px; background:#059669"></div><div><div style="font:600 13px/1.3 inherit; color:#1f2937">--green</div><div style="font:400 12px/1.3 inherit; color:#9ca3af">Income, under budget</div></div><div class="num" style="font:500 12px/1 inherit; color:#6b7280">#059669</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #f1f3f5"><div style="height:30px; border-radius:8px; background:#d97706"></div><div><div style="font:600 13px/1.3 inherit; color:#1f2937">--amber</div><div style="font:400 12px/1.3 inherit; color:#9ca3af">Warning, near limit</div></div><div class="num" style="font:500 12px/1 inherit; color:#6b7280">#d97706</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #f1f3f5"><div style="height:30px; border-radius:8px; background:#dc2626"></div><div><div style="font:600 13px/1.3 inherit; color:#1f2937">--red</div><div style="font:400 12px/1.3 inherit; color:#9ca3af">Over budget, destructive</div></div><div class="num" style="font:500 12px/1 inherit; color:#6b7280">#dc2626</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== FOUNDATIONS: COLORS DARK ===================== -->
+<div style="position:absolute; left:680px; top:150px; width:600px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Color tokens — Dark (proposed, not inverted)</div>
+  <div style="background:#171a21; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.4); padding:22px; border:1px solid #2a2f3a">
+    <div style="display:flex; flex-direction:column; gap:2px">
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; padding:0 6px 8px; font:600 11px/1 inherit; color:#6b7280; text-transform:uppercase; letter-spacing:.06em">
+        <div></div><div>Token · role</div><div>Hex</div>
+      </div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#e8eaed"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--primary</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Primary text, headings</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#e8eaed</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#9aa1ac"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--secondary</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Secondary text</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#9aa1ac</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#0e1116; border:1px solid #2a2f3a"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--bg</div><div style="font:400 12px/1.3 inherit; color:#6b7280">App background</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#0e1116</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#171a21; border:1px solid #2a2f3a"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--card</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Card surfaces</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#171a21</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#2a2f3a"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--border</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Dividers, card borders</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#2a2f3a</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#3b82f6"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--accent</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Primary actions, links, focus</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#3b82f6</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#34d399"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--green</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Income, under budget</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#34d399</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#f59e0b"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--amber</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Warning, near limit</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#f59e0b</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#f87171"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--red</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Over budget, destructive</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#f87171</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== FOUNDATIONS: TYPE SCALE ===================== -->
+<div style="position:absolute; left:1360px; top:150px; width:520px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Type scale — system stack</div>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); padding:24px 26px; border:1px solid #eef0f3">
+    <div style="display:flex; flex-direction:column; gap:18px">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid #f1f3f5"><div style="font:700 34px/1.1 inherit; color:#1f2937; letter-spacing:-0.02em">Display</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">34 / 700 / -2%</div></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid #f1f3f5"><div style="font:700 24px/1.2 inherit; color:#1f2937; letter-spacing:-0.01em">Heading 1</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">24 / 700</div></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid #f1f3f5"><div style="font:600 18px/1.3 inherit; color:#1f2937">Heading 2</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">18 / 600</div></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid #f1f3f5"><div style="font:400 14px/1.5 inherit; color:#1f2937">Body — the default reading size</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">14 / 400</div></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid #f1f3f5"><div style="font:500 12px/1.4 inherit; color:#6b7280">Caption · labels &amp; meta</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">12 / 500</div></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px"><div class="num" style="font:600 20px/1.2 inherit; color:#1f2937">$1,234.56</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">amounts · tabular</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== FOUNDATIONS: SPACING + RADIUS + WORDMARK ===================== -->
+<div style="position:absolute; left:1960px; top:150px; width:440px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Spacing · radius · wordmark</div>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); padding:24px; border:1px solid #eef0f3">
+    <div style="font:600 12px/1 inherit; color:#9ca3af; text-transform:uppercase; letter-spacing:.06em; margin-bottom:14px">Spacing — 4px base</div>
+    <div style="display:flex; align-items:flex-end; gap:12px; margin-bottom:24px">
+      <div style="text-align:center"><div style="width:4px; height:4px; background:#2563eb; border-radius:2px; margin:0 auto"></div><div class="num" style="font:500 10px/1 inherit; color:#9ca3af; margin-top:6px">4</div></div>
+      <div style="text-align:center"><div style="width:8px; height:8px; background:#2563eb; border-radius:2px; margin:0 auto"></div><div class="num" style="font:500 10px/1 inherit; color:#9ca3af; margin-top:6px">8</div></div>
+      <div style="text-align:center"><div style="width:12px; height:12px; background:#2563eb; border-radius:2px; margin:0 auto"></div><div class="num" style="font:500 10px/1 inherit; color:#9ca3af; margin-top:6px">12</div></div>
+      <div style="text-align:center"><div style="width:16px; height:16px; background:#2563eb; border-radius:3px; margin:0 auto"></div><div class="num" style="font:500 10px/1 inherit; color:#9ca3af; margin-top:6px">16</div></div>
+      <div style="text-align:center"><div style="width:24px; height:24px; background:#2563eb; border-radius:4px; margin:0 auto"></div><div class="num" style="font:500 10px/1 inherit; color:#9ca3af; margin-top:6px">24</div></div>
+      <div style="text-align:center"><div style="width:32px; height:32px; background:#2563eb; border-radius:5px; margin:0 auto"></div><div class="num" style="font:500 10px/1 inherit; color:#9ca3af; margin-top:6px">32</div></div>
+    </div>
+    <div style="font:600 12px/1 inherit; color:#9ca3af; text-transform:uppercase; letter-spacing:.06em; margin-bottom:14px">Radius</div>
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px">
+      <div style="text-align:center"><div style="width:52px; height:40px; background:#eef2ff; border:1.5px solid #2563eb; border-radius:8px"></div><div class="num" style="font:500 10px/1.3 inherit; color:#6b7280; margin-top:6px">8 · controls</div></div>
+      <div style="text-align:center"><div style="width:52px; height:40px; background:#eef2ff; border:1.5px solid #2563eb; border-radius:12px"></div><div class="num" style="font:500 10px/1.3 inherit; color:#6b7280; margin-top:6px">12 · cards</div></div>
+      <div style="text-align:center"><div style="width:52px; height:40px; background:#eef2ff; border:1.5px solid #2563eb; border-radius:999px"></div><div class="num" style="font:500 10px/1.3 inherit; color:#6b7280; margin-top:6px">999 · pills</div></div>
+    </div>
+    <div style="font:600 12px/1 inherit; color:#9ca3af; text-transform:uppercase; letter-spacing:.06em; margin-bottom:14px">Wordmark</div>
+    <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap">
+      <div style="display:flex; align-items:center; gap:11px">
+        <div style="width:30px; height:30px; border-radius:8px; background:#2563eb; position:relative; flex:none"><div style="position:absolute; left:8px; top:8px; width:14px; height:14px; border-radius:50%; border:2.5px solid #fff"></div></div>
+        <div style="font:700 19px/1 inherit; color:#1f2937; letter-spacing:-0.01em">Budetau</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:11px; background:#171a21; padding:10px 14px; border-radius:10px">
+        <div style="width:30px; height:30px; border-radius:8px; background:#3b82f6; position:relative; flex:none"><div style="position:absolute; left:8px; top:8px; width:14px; height:14px; border-radius:50%; border:2.5px solid #fff"></div></div>
+        <div style="font:700 19px/1 inherit; color:#e8eaed; letter-spacing:-0.01em">Budetau</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== COMPONENTS: BUTTONS ===================== -->
+<div style="position:absolute; left:0; top:870px; width:640px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Buttons — variants × states</div>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); padding:24px; border:1px solid #eef0f3; display:flex; flex-direction:column; gap:20px">
+    <div>
+      <div style="font:600 12px/1 inherit; color:#9ca3af; margin-bottom:12px">Primary</div>
+      <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center">
+        <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:10px 16px; border-radius:8px; cursor:pointer">Add transaction</button>
+        <button style="font:600 13px/1 inherit; color:#fff; background:#1d4ed8; border:none; padding:10px 16px; border-radius:8px; cursor:pointer">Hover</button>
+        <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:10px 16px; border-radius:8px; box-shadow:0 0 0 3px rgba(37,99,235,.4); cursor:pointer">Focus</button>
+        <button style="font:600 13px/1 inherit; color:#fff; background:#1e40af; border:none; padding:10px 16px; border-radius:8px; cursor:pointer">Active</button>
+        <button disabled="" style="font:600 13px/1 inherit; color:#fff; background:#9db8ee; border:none; padding:10px 16px; border-radius:8px; cursor:not-allowed">Disabled</button>
+        <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:10px 16px; border-radius:8px; display:inline-flex; align-items:center; gap:8px"><span style="width:13px; height:13px; border:2px solid rgba(255,255,255,.45); border-top-color:#fff; border-radius:50%; display:inline-block; animation:spin .7s linear infinite"></span>Saving…</button>
+      </div>
+    </div>
+    <div>
+      <div style="font:600 12px/1 inherit; color:#9ca3af; margin-bottom:12px">Secondary</div>
+      <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center">
+        <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:10px 16px; border-radius:8px; cursor:pointer">Default</button>
+        <button style="font:600 13px/1 inherit; color:#1f2937; background:#f9fafb; border:1px solid #d1d5db; padding:10px 16px; border-radius:8px; cursor:pointer">Hover</button>
+        <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #2563eb; padding:10px 16px; border-radius:8px; box-shadow:0 0 0 3px rgba(37,99,235,.4); cursor:pointer">Focus</button>
+        <button disabled="" style="font:600 13px/1 inherit; color:#9ca3af; background:#f9fafb; border:1px solid #e5e7eb; padding:10px 16px; border-radius:8px; cursor:not-allowed">Disabled</button>
+      </div>
+    </div>
+    <div>
+      <div style="font:600 12px/1 inherit; color:#9ca3af; margin-bottom:12px">Ghost &amp; Destructive</div>
+      <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center">
+        <button style="font:600 13px/1 inherit; color:#2563eb; background:transparent; border:none; padding:10px 14px; border-radius:8px; cursor:pointer">Ghost</button>
+        <button style="font:600 13px/1 inherit; color:#2563eb; background:#eff6ff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer">Ghost hover</button>
+        <button style="font:600 13px/1 inherit; color:#fff; background:#dc2626; border:none; padding:10px 16px; border-radius:8px; cursor:pointer">Delete</button>
+        <button style="font:600 13px/1 inherit; color:#fff; background:#b91c1c; border:none; padding:10px 16px; border-radius:8px; cursor:pointer">Delete hover</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== COMPONENTS: INPUTS / FORM ===================== -->
+<div style="position:absolute; left:720px; top:870px; width:560px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Inputs &amp; form fields — states</div>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); padding:24px; border:1px solid #eef0f3; display:flex; flex-direction:column; gap:18px">
+    <div>
+      <div style="font:600 12px/1.4 inherit; color:#4b5563; margin-bottom:7px">Default</div>
+      <div style="display:flex; align-items:center; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; font:400 14px/1 inherit; color:#9ca3af; background:#fff">Add a note…</div>
+    </div>
+    <div>
+      <div style="font:600 12px/1.4 inherit; color:#4b5563; margin-bottom:7px">Focused</div>
+      <div style="display:flex; align-items:center; height:42px; border:1px solid #2563eb; border-radius:8px; padding:0 12px; font:400 14px/1 inherit; color:#1f2937; background:#fff; box-shadow:0 0 0 3px rgba(37,99,235,.35)">Whole Foods<span style="width:1px; height:18px; background:#2563eb; margin-left:1px"></span></div>
+    </div>
+    <div>
+      <div style="font:600 12px/1.4 inherit; color:#4b5563; margin-bottom:7px">Amount input — currency formatted</div>
+      <div style="display:flex; align-items:center; height:48px; border:1px solid #d1d5db; border-radius:8px; padding:0 14px; background:#fff"><span class="num" style="font:600 22px/1 inherit; color:#9ca3af">$</span><span class="num" style="font:600 22px/1 inherit; color:#1f2937; margin-left:2px">63.20</span></div>
+    </div>
+    <div>
+      <div style="font:600 12px/1.4 inherit; color:#dc2626; margin-bottom:7px">Error</div>
+      <div style="display:flex; align-items:center; height:42px; border:1px solid #dc2626; border-radius:8px; padding:0 12px; font:400 14px/1 inherit; color:#1f2937; background:#fff; box-shadow:0 0 0 3px rgba(220,38,38,.18)"></div>
+      <div style="font:500 12px/1.4 inherit; color:#dc2626; margin-top:6px">Amount is required.</div>
+    </div>
+    <div>
+      <div style="font:600 12px/1.4 inherit; color:#9ca3af; margin-bottom:7px">Disabled</div>
+      <div style="display:flex; align-items:center; height:42px; border:1px solid #e5e7eb; border-radius:8px; padding:0 12px; font:400 14px/1 inherit; color:#c2c7cf; background:#f9fafb">Locked</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== COMPONENTS: TOGGLE / BADGES / SELECT ===================== -->
+<div style="position:absolute; left:1340px; top:870px; width:480px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Toggles · badges · segmented</div>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); padding:24px; border:1px solid #eef0f3; display:flex; flex-direction:column; gap:22px">
+    <div>
+      <div style="font:600 12px/1 inherit; color:#9ca3af; margin-bottom:12px">Switch</div>
+      <div style="display:flex; gap:18px; align-items:center">
+        <div style="display:flex; align-items:center; gap:8px"><div style="width:40px; height:24px; background:#2563eb; border-radius:999px; position:relative"><div style="position:absolute; top:2px; right:2px; width:20px; height:20px; background:#fff; border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,.2)"></div></div><span style="font:500 13px/1 inherit; color:#1f2937">On</span></div>
+        <div style="display:flex; align-items:center; gap:8px"><div style="width:40px; height:24px; background:#d1d5db; border-radius:999px; position:relative"><div style="position:absolute; top:2px; left:2px; width:20px; height:20px; background:#fff; border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,.2)"></div></div><span style="font:500 13px/1 inherit; color:#9ca3af">Off</span></div>
+      </div>
+    </div>
+    <div>
+      <div style="font:600 12px/1 inherit; color:#9ca3af; margin-bottom:12px">Segmented control · Type</div>
+      <div style="display:inline-flex; background:#f1f3f5; border-radius:10px; padding:3px; gap:2px">
+        <div style="font:600 13px/1 inherit; color:#1f2937; background:#fff; padding:8px 16px; border-radius:8px; box-shadow:0 1px 2px rgba(16,24,40,.1)">Expense</div>
+        <div style="font:600 13px/1 inherit; color:#6b7280; padding:8px 16px; border-radius:8px">Income</div>
+        <div style="font:600 13px/1 inherit; color:#6b7280; padding:8px 16px; border-radius:8px">Transfer</div>
+      </div>
+    </div>
+    <div>
+      <div style="font:600 12px/1 inherit; color:#9ca3af; margin-bottom:12px">Budget status badges</div>
+      <div style="display:flex; flex-wrap:wrap; gap:10px">
+        <span style="font:600 12px/1 inherit; color:#059669; background:#ecfdf3; padding:5px 11px; border-radius:999px; display:inline-flex; align-items:center; gap:5px"><span style="width:6px; height:6px; border-radius:50%; background:#059669"></span>Under · 77%</span>
+        <span style="font:600 12px/1 inherit; color:#b45309; background:#fffaeb; padding:5px 11px; border-radius:999px; display:inline-flex; align-items:center; gap:5px"><span style="width:6px; height:6px; border-radius:50%; background:#d97706"></span>Near · 95%</span>
+        <span style="font:600 12px/1 inherit; color:#dc2626; background:#fef3f2; padding:5px 11px; border-radius:999px; display:inline-flex; align-items:center; gap:5px"><span style="width:6px; height:6px; border-radius:50%; background:#dc2626"></span>Over · 109%</span>
+      </div>
+    </div>
+    <div>
+      <div style="font:600 12px/1 inherit; color:#9ca3af; margin-bottom:12px">Category pills</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px">
+        <span style="font:500 12px/1 inherit; color:#1f2937; background:#f9fafb; border:1px solid #e5e7eb; padding:6px 11px; border-radius:999px; display:inline-flex; align-items:center; gap:6px"><span style="width:8px; height:8px; border-radius:50%; background:#E57373"></span>Dining Out</span>
+        <span style="font:500 12px/1 inherit; color:#1f2937; background:#f9fafb; border:1px solid #e5e7eb; padding:6px 11px; border-radius:999px; display:inline-flex; align-items:center; gap:6px"><span style="width:8px; height:8px; border-radius:50%; background:#81C784"></span>Groceries</span>
+        <span style="font:500 12px/1 inherit; color:#1f2937; background:#f9fafb; border:1px solid #e5e7eb; padding:6px 11px; border-radius:999px; display:inline-flex; align-items:center; gap:6px"><span style="width:8px; height:8px; border-radius:50%; background:#64B5F6"></span>Rent</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== COMPONENTS: BUDGET STATUS SPECTRUM ===================== -->
+<div style="position:absolute; left:1860px; top:870px; width:760px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Budget status spectrum — under → near → over</div>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); padding:24px; border:1px solid #eef0f3">
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:24px">
+      <!-- under -->
+      <div style="border:1px solid #eef0f3; border-radius:12px; padding:16px; background:#fff">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+          <div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#81C784"></span><span style="font:600 14px/1 inherit; color:#1f2937">Groceries</span></div>
+          <span style="font:600 11px/1 inherit; color:#059669; background:#ecfdf3; padding:4px 8px; border-radius:999px">77%</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#1f2937">$384</span><span class="num" style="font:500 13px/1 inherit; color:#9ca3af">of $500</span></div>
+        <div style="height:8px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:77%; height:100%; background:#059669; border-radius:999px"></div></div>
+        <div style="font:500 12px/1 inherit; color:#059669; margin-top:10px">$116 remaining</div>
+      </div>
+      <!-- near -->
+      <div style="border:1px solid #fde9c8; border-radius:12px; padding:16px; background:#fffdf8">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+          <div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#E57373"></span><span style="font:600 14px/1 inherit; color:#1f2937">Dining Out</span></div>
+          <span style="font:600 11px/1 inherit; color:#b45309; background:#fffaeb; padding:4px 8px; border-radius:999px">95%</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#1f2937">$285</span><span class="num" style="font:500 13px/1 inherit; color:#9ca3af">of $300</span></div>
+        <div style="height:8px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:95%; height:100%; background:#d97706; border-radius:999px"></div></div>
+        <div style="font:500 12px/1 inherit; color:#b45309; margin-top:10px">⚠ $15 left · near limit</div>
+      </div>
+      <!-- over -->
+      <div style="border:1px solid #f7d4d4; border-radius:12px; padding:16px; background:#fffafa">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+          <div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#FFB74D"></span><span style="font:600 14px/1 inherit; color:#1f2937">Transport</span></div>
+          <span style="font:600 11px/1 inherit; color:#dc2626; background:#fef3f2; padding:4px 8px; border-radius:999px">109%</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#1f2937">$164</span><span class="num" style="font:500 13px/1 inherit; color:#9ca3af">of $150</span></div>
+        <div style="height:8px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:100%; height:100%; background:#dc2626; border-radius:999px"></div></div>
+        <div style="font:500 12px/1 inherit; color:#dc2626; margin-top:10px">● $14 over budget</div>
+      </div>
+    </div>
+    <!-- alert banners -->
+    <div style="font:600 12px/1 inherit; color:#9ca3af; margin-bottom:12px">Alert banners — persistent until resolved</div>
+    <div style="display:flex; flex-direction:column; gap:10px">
+      <div style="display:flex; align-items:center; gap:12px; background:#fffaeb; border:1px solid #fde9c8; border-left:3px solid #d97706; border-radius:10px; padding:12px 14px">
+        <div style="width:22px; height:22px; border-radius:50%; background:#d97706; color:#fff; font:700 13px/22px inherit; text-align:center; flex:none">!</div>
+        <div style="flex:1"><span style="font:600 13px/1.4 inherit; color:#92400e">Dining Out is at 95% of its $300 budget.</span> <span style="font:400 13px/1.4 inherit; color:#b45309">$15 remaining this month.</span></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; background:#fef3f2; border:1px solid #f7d4d4; border-left:3px solid #dc2626; border-radius:10px; padding:12px 14px">
+        <div style="width:22px; height:22px; border-radius:50%; background:#dc2626; color:#fff; font:700 13px/22px inherit; text-align:center; flex:none">!</div>
+        <div style="flex:1"><span style="font:600 13px/1.4 inherit; color:#991b1b">Transport is over budget</span> <span style="font:400 13px/1.4 inherit; color:#b91c1c">— $164 of $150 (109%).</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== COMPONENTS: TOAST / FAB / CONFIRM / EMPTY ===================== -->
+<div style="position:absolute; left:2660px; top:870px; width:520px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Toast · FAB · confirm dialog</div>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); padding:24px; border:1px solid #eef0f3; display:flex; flex-direction:column; gap:22px">
+    <div>
+      <div style="font:600 12px/1 inherit; color:#9ca3af; margin-bottom:12px">Success toast</div>
+      <div style="display:inline-flex; align-items:center; gap:11px; background:#1f2937; color:#fff; padding:12px 16px; border-radius:10px; box-shadow:0 8px 24px rgba(16,24,40,.18)">
+        <div style="width:20px; height:20px; border-radius:50%; background:#059669; color:#fff; font:700 12px/20px inherit; text-align:center; flex:none">✓</div>
+        <span style="font:500 13px/1 inherit">Added <span class="num" style="font-weight:600">$5.75</span> to Dining Out</span>
+        <span style="font:600 12px/1 inherit; color:#93c5fd; margin-left:4px">Undo</span>
+      </div>
+    </div>
+    <div>
+      <div style="font:600 12px/1 inherit; color:#9ca3af; margin-bottom:12px">FAB — Quick-Add (Cmd / Ctrl + K)</div>
+      <div style="display:flex; align-items:center; gap:14px">
+        <div style="width:52px; height:52px; border-radius:50%; background:#2563eb; box-shadow:0 6px 18px rgba(37,99,235,.4); position:relative; flex:none"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:20px; height:2.5px; background:#fff; border-radius:2px"></div><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:2.5px; height:20px; background:#fff; border-radius:2px"></div></div>
+        <span style="font:500 12px/1.4 inherit; color:#9ca3af">Fixed bottom-right · 24px inset</span>
+      </div>
+    </div>
+    <div>
+      <div style="font:600 12px/1 inherit; color:#9ca3af; margin-bottom:12px">Confirm dialog — destructive</div>
+      <div style="border:1px solid #eef0f3; border-radius:12px; padding:18px; box-shadow:0 8px 24px rgba(16,24,40,.1)">
+        <div style="font:600 15px/1.3 inherit; color:#1f2937; margin-bottom:6px">Delete this transaction?</div>
+        <div style="font:400 13px/1.5 inherit; color:#6b7280; margin-bottom:16px">“Blue Bottle Coffee — $5.75” will be permanently removed. This can’t be undone.</div>
+        <div style="display:flex; justify-content:flex-end; gap:10px">
+          <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:9px 14px; border-radius:8px; cursor:pointer">Cancel</button>
+          <button style="font:600 13px/1 inherit; color:#fff; background:#dc2626; border:none; padding:9px 14px; border-radius:8px; cursor:pointer">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DASHBOARD — LIGHT (populated) ===================== -->
+<div style="position:absolute; left:0; top:1780px; width:1200px" class="scr" data-screen-label="Dashboard · Light">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Dashboard — Light · populated (1200px)</div>
+  <div style="position:relative; background:#fff; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <!-- titlebar -->
+    <div style="height:40px; background:#fff; border-bottom:1px solid #eef0f3; display:flex; align-items:center; padding:0 14px; gap:8px">
+      <div style="width:12px; height:12px; border-radius:50%; background:#ff5f57"></div>
+      <div style="width:12px; height:12px; border-radius:50%; background:#febc2e"></div>
+      <div style="width:12px; height:12px; border-radius:50%; background:#28c840"></div>
+      <div style="flex:1; text-align:center; font:500 12px/1 inherit; color:#9ca3af">Budetau — budget.db</div>
+      <div style="width:54px"></div>
+    </div>
+    <div style="display:flex; align-items:stretch">
+      <!-- SIDEBAR -->
+      <div style="width:228px; background:#fbfbfc; border-right:1px solid #eef0f3; padding:18px 14px; display:flex; flex-direction:column">
+        <div style="display:flex; align-items:center; gap:10px; padding:4px 8px 22px">
+          <div style="width:28px; height:28px; border-radius:8px; background:#2563eb; position:relative; flex:none"><div style="position:absolute; left:8px; top:8px; width:12px; height:12px; border-radius:50%; border:2.5px solid #fff"></div></div>
+          <div style="font:700 16px/1 inherit; color:#1f2937; letter-spacing:-0.01em">Budetau</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:3px">
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; background:#eff6ff; color:#2563eb">
+            <div style="width:16px; height:16px; display:grid; grid-template-columns:1fr 1fr; gap:2px; flex:none"><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div></div>
+            <span style="font:600 13px/1 inherit">Dashboard</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563">
+            <div style="width:16px; height:16px; display:flex; flex-direction:column; justify-content:center; gap:3px; flex:none"><div style="height:2px; width:100%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:75%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:90%; background:#9ca3af; border-radius:2px"></div></div>
+            <span style="font:500 13px/1 inherit">Transactions</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563">
+            <div style="width:16px; height:16px; border-radius:50%; border:2px solid #9ca3af; position:relative; flex:none"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:5px; height:5px; border-radius:50%; background:#9ca3af"></div></div>
+            <span style="font:500 13px/1 inherit">Settings</span>
+          </div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="border-top:1px solid #eef0f3; padding-top:14px; display:flex; align-items:center; gap:10px">
+          <div style="width:30px; height:30px; border-radius:50%; background:#e0e7ff; color:#2563eb; font:600 12px/30px inherit; text-align:center; flex:none">P</div>
+          <div style="flex:1; min-width:0"><div style="font:600 12px/1.3 inherit; color:#1f2937">Personal</div><div style="font:400 11px/1.3 inherit; color:#9ca3af">Local file</div></div>
+        </div>
+      </div>
+      <!-- MAIN -->
+      <div style="flex:1; background:#f9fafb; padding:24px 28px 30px">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px">
+          <div><div style="font:700 24px/1.1 inherit; color:#1f2937; letter-spacing:-0.01em">Dashboard</div><div style="font:400 13px/1.4 inherit; color:#9ca3af; margin-top:3px">Your month at a glance</div></div>
+          <div style="display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #e5e7eb; border-radius:999px; padding:6px 8px">
+            <div style="width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#6b7280; font:600 14px/1 inherit">‹</div>
+            <span style="font:600 13px/1 inherit; color:#1f2937; min-width:80px; text-align:center">June 2026</span>
+            <div style="width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#6b7280; font:600 14px/1 inherit">›</div>
+          </div>
+        </div>
+        <!-- HERO SUMMARY -->
+        <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:22px 24px; margin-bottom:18px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+          <div style="display:flex; align-items:stretch">
+            <div style="flex:1.2; padding-right:24px">
+              <div style="font:600 12px/1 inherit; color:#9ca3af; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px">Net this month</div>
+              <div class="num" style="font:700 38px/1 inherit; color:#059669; letter-spacing:-0.02em">+$1,352.37</div>
+              <div style="font:500 12px/1.4 inherit; color:#6b7280; margin-top:10px">You’re spending less than you earn 👍</div>
+            </div>
+            <div style="width:1px; background:#eef0f3"></div>
+            <div style="flex:1; padding:0 24px">
+              <div style="font:600 12px/1 inherit; color:#9ca3af; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px">Income</div>
+              <div class="num" style="font:700 26px/1 inherit; color:#1f2937; letter-spacing:-0.01em">$4,200.00</div>
+              <div style="font:500 12px/1.4 inherit; color:#9ca3af; margin-top:8px">1 deposit · Salary</div>
+            </div>
+            <div style="width:1px; background:#eef0f3"></div>
+            <div style="flex:1; padding-left:24px">
+              <div style="font:600 12px/1 inherit; color:#9ca3af; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px">Spent</div>
+              <div class="num" style="font:700 26px/1 inherit; color:#1f2937; letter-spacing:-0.01em">$2,847.63</div>
+              <div style="font:500 12px/1.4 inherit; color:#9ca3af; margin-top:8px">68% of income</div>
+            </div>
+          </div>
+          <div style="height:6px; background:#f1f3f5; border-radius:999px; overflow:hidden; margin-top:18px"><div style="width:68%; height:100%; background:#2563eb; border-radius:999px"></div></div>
+        </div>
+        <!-- ALERTS -->
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:22px">
+          <div style="display:flex; align-items:center; gap:12px; background:#fffaeb; border:1px solid #fde9c8; border-left:3px solid #d97706; border-radius:10px; padding:11px 14px">
+            <div style="width:20px; height:20px; border-radius:50%; background:#d97706; color:#fff; font:700 12px/20px inherit; text-align:center; flex:none">!</div>
+            <div style="flex:1; font:500 13px/1.4 inherit; color:#92400e"><strong style="font-weight:600">Dining Out</strong> is at 95% of its $300 budget · $15 left.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:#fef3f2; border:1px solid #f7d4d4; border-left:3px solid #dc2626; border-radius:10px; padding:11px 14px">
+            <div style="width:20px; height:20px; border-radius:50%; background:#dc2626; color:#fff; font:700 12px/20px inherit; text-align:center; flex:none">!</div>
+            <div style="flex:1; font:500 13px/1.4 inherit; color:#991b1b"><strong style="font-weight:600">Transport</strong> is over budget — $164 of $150 (109%).</div>
+          </div>
+        </div>
+        <!-- BUDGETS -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+          <div style="font:600 16px/1 inherit; color:#1f2937">Budgets</div>
+          <span style="font:600 13px/1 inherit; color:#2563eb">Manage budgets</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px">
+          <!-- Groceries under -->
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:16px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#81C784"></span><span style="font:600 14px/1 inherit; color:#1f2937">Groceries</span></div><span style="font:600 11px/1 inherit; color:#059669; background:#ecfdf3; padding:4px 8px; border-radius:999px">77%</span></div>
+            <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#1f2937">$384</span><span class="num" style="font:500 13px/1 inherit; color:#9ca3af">of $500</span></div>
+            <div style="height:8px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:77%; height:100%; background:#059669; border-radius:999px"></div></div>
+            <div style="font:500 12px/1 inherit; color:#059669; margin-top:10px">$116 remaining</div>
+          </div>
+          <!-- Dining near -->
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:16px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#E57373"></span><span style="font:600 14px/1 inherit; color:#1f2937">Dining Out</span></div><span style="font:600 11px/1 inherit; color:#b45309; background:#fffaeb; padding:4px 8px; border-radius:999px">95%</span></div>
+            <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#1f2937">$285</span><span class="num" style="font:500 13px/1 inherit; color:#9ca3af">of $300</span></div>
+            <div style="height:8px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:95%; height:100%; background:#d97706; border-radius:999px"></div></div>
+            <div style="font:500 12px/1 inherit; color:#b45309; margin-top:10px">⚠ $15 left · near limit</div>
+          </div>
+          <!-- Transport over -->
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:16px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#FFB74D"></span><span style="font:600 14px/1 inherit; color:#1f2937">Transport</span></div><span style="font:600 11px/1 inherit; color:#dc2626; background:#fef3f2; padding:4px 8px; border-radius:999px">109%</span></div>
+            <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#1f2937">$164</span><span class="num" style="font:500 13px/1 inherit; color:#9ca3af">of $150</span></div>
+            <div style="height:8px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:100%; height:100%; background:#dc2626; border-radius:999px"></div></div>
+            <div style="font:500 12px/1 inherit; color:#dc2626; margin-top:10px">● $14 over budget</div>
+          </div>
+          <!-- Rent at limit -->
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:16px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#64B5F6"></span><span style="font:600 14px/1 inherit; color:#1f2937">Rent</span></div><span style="font:600 11px/1 inherit; color:#b45309; background:#fffaeb; padding:4px 8px; border-radius:999px">100%</span></div>
+            <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#1f2937">$1,800</span><span class="num" style="font:500 13px/1 inherit; color:#9ca3af">of $1,800</span></div>
+            <div style="height:8px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:100%; height:100%; background:#d97706; border-radius:999px"></div></div>
+            <div style="font:500 12px/1 inherit; color:#b45309; margin-top:10px">$0 left · at limit</div>
+          </div>
+          <!-- Utilities -->
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:16px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#4DD0E1"></span><span style="font:600 14px/1 inherit; color:#1f2937">Utilities</span></div><span style="font:600 11px/1 inherit; color:#059669; background:#ecfdf3; padding:4px 8px; border-radius:999px">86%</span></div>
+            <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#1f2937">$138</span><span class="num" style="font:500 13px/1 inherit; color:#9ca3af">of $160</span></div>
+            <div style="height:8px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:86%; height:100%; background:#059669; border-radius:999px"></div></div>
+            <div style="font:500 12px/1 inherit; color:#059669; margin-top:10px">$22 remaining</div>
+          </div>
+          <!-- Entertainment -->
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:16px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#BA68C8"></span><span style="font:600 14px/1 inherit; color:#1f2937">Entertainment</span></div><span style="font:600 11px/1 inherit; color:#059669; background:#ecfdf3; padding:4px 8px; border-radius:999px">60%</span></div>
+            <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#1f2937">$72</span><span class="num" style="font:500 13px/1 inherit; color:#9ca3af">of $120</span></div>
+            <div style="height:8px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:60%; height:100%; background:#059669; border-radius:999px"></div></div>
+            <div style="font:500 12px/1 inherit; color:#059669; margin-top:10px">$48 remaining</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- FAB -->
+    <div style="position:absolute; right:22px; bottom:22px; width:50px; height:50px; border-radius:50%; background:#2563eb; box-shadow:0 6px 18px rgba(37,99,235,.45); z-index:5"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:18px; height:2.5px; background:#fff; border-radius:2px"></div><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:2.5px; height:18px; background:#fff; border-radius:2px"></div></div>
+  </div>
+</div>
+
+<!-- ===================== DASHBOARD — DARK (populated) ===================== -->
+<div style="position:absolute; left:1320px; top:1780px; width:1200px" class="scr" data-screen-label="Dashboard · Dark">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Dashboard — Dark · populated</div>
+  <div style="position:relative; background:#0e1116; border-radius:12px; box-shadow:0 16px 48px rgba(0,0,0,.5); border:1px solid #2a2f3a; overflow:hidden">
+    <div style="height:40px; background:#171a21; border-bottom:1px solid #2a2f3a; display:flex; align-items:center; padding:0 14px; gap:8px">
+      <div style="width:12px; height:12px; border-radius:50%; background:#ff5f57"></div>
+      <div style="width:12px; height:12px; border-radius:50%; background:#febc2e"></div>
+      <div style="width:12px; height:12px; border-radius:50%; background:#28c840"></div>
+      <div style="flex:1; text-align:center; font:500 12px/1 inherit; color:#6b7280">Budetau — budget.db</div>
+      <div style="width:54px"></div>
+    </div>
+    <div style="display:flex; align-items:stretch">
+      <!-- SIDEBAR -->
+      <div style="width:228px; background:#13161c; border-right:1px solid #2a2f3a; padding:18px 14px; display:flex; flex-direction:column">
+        <div style="display:flex; align-items:center; gap:10px; padding:4px 8px 22px">
+          <div style="width:28px; height:28px; border-radius:8px; background:#3b82f6; position:relative; flex:none"><div style="position:absolute; left:8px; top:8px; width:12px; height:12px; border-radius:50%; border:2.5px solid #fff"></div></div>
+          <div style="font:700 16px/1 inherit; color:#e8eaed; letter-spacing:-0.01em">Budetau</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:3px">
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; background:rgba(59,130,246,.16); color:#60a5fa">
+            <div style="width:16px; height:16px; display:grid; grid-template-columns:1fr 1fr; gap:2px; flex:none"><div style="background:#60a5fa; border-radius:1.5px"></div><div style="background:#60a5fa; border-radius:1.5px"></div><div style="background:#60a5fa; border-radius:1.5px"></div><div style="background:#60a5fa; border-radius:1.5px"></div></div>
+            <span style="font:600 13px/1 inherit">Dashboard</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#9aa1ac">
+            <div style="width:16px; height:16px; display:flex; flex-direction:column; justify-content:center; gap:3px; flex:none"><div style="height:2px; width:100%; background:#6b7280; border-radius:2px"></div><div style="height:2px; width:75%; background:#6b7280; border-radius:2px"></div><div style="height:2px; width:90%; background:#6b7280; border-radius:2px"></div></div>
+            <span style="font:500 13px/1 inherit">Transactions</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#9aa1ac">
+            <div style="width:16px; height:16px; border-radius:50%; border:2px solid #6b7280; position:relative; flex:none"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:5px; height:5px; border-radius:50%; background:#6b7280"></div></div>
+            <span style="font:500 13px/1 inherit">Settings</span>
+          </div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="border-top:1px solid #2a2f3a; padding-top:14px; display:flex; align-items:center; gap:10px">
+          <div style="width:30px; height:30px; border-radius:50%; background:rgba(59,130,246,.2); color:#60a5fa; font:600 12px/30px inherit; text-align:center; flex:none">P</div>
+          <div style="flex:1; min-width:0"><div style="font:600 12px/1.3 inherit; color:#e8eaed">Personal</div><div style="font:400 11px/1.3 inherit; color:#6b7280">Local file</div></div>
+        </div>
+      </div>
+      <!-- MAIN -->
+      <div style="flex:1; background:#0e1116; padding:24px 28px 30px">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px">
+          <div><div style="font:700 24px/1.1 inherit; color:#e8eaed; letter-spacing:-0.01em">Dashboard</div><div style="font:400 13px/1.4 inherit; color:#6b7280; margin-top:3px">Your month at a glance</div></div>
+          <div style="display:flex; align-items:center; gap:8px; background:#171a21; border:1px solid #2a2f3a; border-radius:999px; padding:6px 8px">
+            <div style="width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#9aa1ac; font:600 14px/1 inherit">‹</div>
+            <span style="font:600 13px/1 inherit; color:#e8eaed; min-width:80px; text-align:center">June 2026</span>
+            <div style="width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#9aa1ac; font:600 14px/1 inherit">›</div>
+          </div>
+        </div>
+        <div style="background:#171a21; border:1px solid #2a2f3a; border-radius:12px; padding:22px 24px; margin-bottom:18px">
+          <div style="display:flex; align-items:stretch">
+            <div style="flex:1.2; padding-right:24px">
+              <div style="font:600 12px/1 inherit; color:#6b7280; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px">Net this month</div>
+              <div class="num" style="font:700 38px/1 inherit; color:#34d399; letter-spacing:-0.02em">+$1,352.37</div>
+              <div style="font:500 12px/1.4 inherit; color:#9aa1ac; margin-top:10px">You’re spending less than you earn 👍</div>
+            </div>
+            <div style="width:1px; background:#2a2f3a"></div>
+            <div style="flex:1; padding:0 24px">
+              <div style="font:600 12px/1 inherit; color:#6b7280; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px">Income</div>
+              <div class="num" style="font:700 26px/1 inherit; color:#e8eaed; letter-spacing:-0.01em">$4,200.00</div>
+              <div style="font:500 12px/1.4 inherit; color:#6b7280; margin-top:8px">1 deposit · Salary</div>
+            </div>
+            <div style="width:1px; background:#2a2f3a"></div>
+            <div style="flex:1; padding-left:24px">
+              <div style="font:600 12px/1 inherit; color:#6b7280; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px">Spent</div>
+              <div class="num" style="font:700 26px/1 inherit; color:#e8eaed; letter-spacing:-0.01em">$2,847.63</div>
+              <div style="font:500 12px/1.4 inherit; color:#6b7280; margin-top:8px">68% of income</div>
+            </div>
+          </div>
+          <div style="height:6px; background:#2a2f3a; border-radius:999px; overflow:hidden; margin-top:18px"><div style="width:68%; height:100%; background:#3b82f6; border-radius:999px"></div></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:22px">
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.28); border-left:3px solid #f59e0b; border-radius:10px; padding:11px 14px">
+            <div style="width:20px; height:20px; border-radius:50%; background:#f59e0b; color:#1a1205; font:700 12px/20px inherit; text-align:center; flex:none">!</div>
+            <div style="flex:1; font:500 13px/1.4 inherit; color:#fcd9a0"><strong style="font-weight:600; color:#fde3b8">Dining Out</strong> is at 95% of its $300 budget · $15 left.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.28); border-left:3px solid #f87171; border-radius:10px; padding:11px 14px">
+            <div style="width:20px; height:20px; border-radius:50%; background:#f87171; color:#1a0808; font:700 12px/20px inherit; text-align:center; flex:none">!</div>
+            <div style="flex:1; font:500 13px/1.4 inherit; color:#f6b9b9"><strong style="font-weight:600; color:#fbcfcf">Transport</strong> is over budget — $164 of $150 (109%).</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+          <div style="font:600 16px/1 inherit; color:#e8eaed">Budgets</div>
+          <span style="font:600 13px/1 inherit; color:#60a5fa">Manage budgets</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px">
+          <div style="background:#171a21; border:1px solid #2a2f3a; border-radius:12px; padding:16px"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#81C784"></span><span style="font:600 14px/1 inherit; color:#e8eaed">Groceries</span></div><span style="font:600 11px/1 inherit; color:#34d399; background:rgba(52,211,153,.14); padding:4px 8px; border-radius:999px">77%</span></div><div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#e8eaed">$384</span><span class="num" style="font:500 13px/1 inherit; color:#6b7280">of $500</span></div><div style="height:8px; background:#2a2f3a; border-radius:999px; overflow:hidden"><div style="width:77%; height:100%; background:#34d399; border-radius:999px"></div></div><div style="font:500 12px/1 inherit; color:#34d399; margin-top:10px">$116 remaining</div></div>
+          <div style="background:#171a21; border:1px solid #2a2f3a; border-radius:12px; padding:16px"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#E57373"></span><span style="font:600 14px/1 inherit; color:#e8eaed">Dining Out</span></div><span style="font:600 11px/1 inherit; color:#fbbf60; background:rgba(245,158,11,.14); padding:4px 8px; border-radius:999px">95%</span></div><div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#e8eaed">$285</span><span class="num" style="font:500 13px/1 inherit; color:#6b7280">of $300</span></div><div style="height:8px; background:#2a2f3a; border-radius:999px; overflow:hidden"><div style="width:95%; height:100%; background:#f59e0b; border-radius:999px"></div></div><div style="font:500 12px/1 inherit; color:#fbbf60; margin-top:10px">⚠ $15 left · near limit</div></div>
+          <div style="background:#171a21; border:1px solid #2a2f3a; border-radius:12px; padding:16px"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#FFB74D"></span><span style="font:600 14px/1 inherit; color:#e8eaed">Transport</span></div><span style="font:600 11px/1 inherit; color:#f87171; background:rgba(248,113,113,.14); padding:4px 8px; border-radius:999px">109%</span></div><div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#e8eaed">$164</span><span class="num" style="font:500 13px/1 inherit; color:#6b7280">of $150</span></div><div style="height:8px; background:#2a2f3a; border-radius:999px; overflow:hidden"><div style="width:100%; height:100%; background:#f87171; border-radius:999px"></div></div><div style="font:500 12px/1 inherit; color:#f87171; margin-top:10px">● $14 over budget</div></div>
+          <div style="background:#171a21; border:1px solid #2a2f3a; border-radius:12px; padding:16px"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#64B5F6"></span><span style="font:600 14px/1 inherit; color:#e8eaed">Rent</span></div><span style="font:600 11px/1 inherit; color:#fbbf60; background:rgba(245,158,11,.14); padding:4px 8px; border-radius:999px">100%</span></div><div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#e8eaed">$1,800</span><span class="num" style="font:500 13px/1 inherit; color:#6b7280">of $1,800</span></div><div style="height:8px; background:#2a2f3a; border-radius:999px; overflow:hidden"><div style="width:100%; height:100%; background:#f59e0b; border-radius:999px"></div></div><div style="font:500 12px/1 inherit; color:#fbbf60; margin-top:10px">$0 left · at limit</div></div>
+          <div style="background:#171a21; border:1px solid #2a2f3a; border-radius:12px; padding:16px"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#4DD0E1"></span><span style="font:600 14px/1 inherit; color:#e8eaed">Utilities</span></div><span style="font:600 11px/1 inherit; color:#34d399; background:rgba(52,211,153,.14); padding:4px 8px; border-radius:999px">86%</span></div><div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#e8eaed">$138</span><span class="num" style="font:500 13px/1 inherit; color:#6b7280">of $160</span></div><div style="height:8px; background:#2a2f3a; border-radius:999px; overflow:hidden"><div style="width:86%; height:100%; background:#34d399; border-radius:999px"></div></div><div style="font:500 12px/1 inherit; color:#34d399; margin-top:10px">$22 remaining</div></div>
+          <div style="background:#171a21; border:1px solid #2a2f3a; border-radius:12px; padding:16px"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px"><div style="display:flex; align-items:center; gap:8px"><span style="width:10px; height:10px; border-radius:50%; background:#BA68C8"></span><span style="font:600 14px/1 inherit; color:#e8eaed">Entertainment</span></div><span style="font:600 11px/1 inherit; color:#34d399; background:rgba(52,211,153,.14); padding:4px 8px; border-radius:999px">60%</span></div><div style="display:flex; align-items:baseline; gap:5px; margin-bottom:10px"><span class="num" style="font:700 18px/1 inherit; color:#e8eaed">$72</span><span class="num" style="font:500 13px/1 inherit; color:#6b7280">of $120</span></div><div style="height:8px; background:#2a2f3a; border-radius:999px; overflow:hidden"><div style="width:60%; height:100%; background:#34d399; border-radius:999px"></div></div><div style="font:500 12px/1 inherit; color:#34d399; margin-top:10px">$48 remaining</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute; right:22px; bottom:22px; width:50px; height:50px; border-radius:50%; background:#3b82f6; box-shadow:0 6px 18px rgba(59,130,246,.5); z-index:5"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:18px; height:2.5px; background:#fff; border-radius:2px"></div><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:2.5px; height:18px; background:#fff; border-radius:2px"></div></div>
+  </div>
+</div>
+
+<!-- ===================== DASHBOARD — EMPTY (first run, light) ===================== -->
+<div style="position:absolute; left:2640px; top:1780px; width:1200px" class="scr" data-screen-label="Dashboard · Empty">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Dashboard — Empty (first-run)</div>
+  <div style="position:relative; background:#fff; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <div style="height:40px; background:#fff; border-bottom:1px solid #eef0f3; display:flex; align-items:center; padding:0 14px; gap:8px">
+      <div style="width:12px; height:12px; border-radius:50%; background:#ff5f57"></div>
+      <div style="width:12px; height:12px; border-radius:50%; background:#febc2e"></div>
+      <div style="width:12px; height:12px; border-radius:50%; background:#28c840"></div>
+      <div style="flex:1; text-align:center; font:500 12px/1 inherit; color:#9ca3af">Budetau — budget.db</div>
+      <div style="width:54px"></div>
+    </div>
+    <div style="display:flex; align-items:stretch; min-height:620px">
+      <div style="width:228px; background:#fbfbfc; border-right:1px solid #eef0f3; padding:18px 14px; display:flex; flex-direction:column">
+        <div style="display:flex; align-items:center; gap:10px; padding:4px 8px 22px">
+          <div style="width:28px; height:28px; border-radius:8px; background:#2563eb; position:relative; flex:none"><div style="position:absolute; left:8px; top:8px; width:12px; height:12px; border-radius:50%; border:2.5px solid #fff"></div></div>
+          <div style="font:700 16px/1 inherit; color:#1f2937; letter-spacing:-0.01em">Budetau</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:3px">
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; background:#eff6ff; color:#2563eb">
+            <div style="width:16px; height:16px; display:grid; grid-template-columns:1fr 1fr; gap:2px; flex:none"><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div></div>
+            <span style="font:600 13px/1 inherit">Dashboard</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563">
+            <div style="width:16px; height:16px; display:flex; flex-direction:column; justify-content:center; gap:3px; flex:none"><div style="height:2px; width:100%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:75%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:90%; background:#9ca3af; border-radius:2px"></div></div>
+            <span style="font:500 13px/1 inherit">Transactions</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563">
+            <div style="width:16px; height:16px; border-radius:50%; border:2px solid #9ca3af; position:relative; flex:none"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:5px; height:5px; border-radius:50%; background:#9ca3af"></div></div>
+            <span style="font:500 13px/1 inherit">Settings</span>
+          </div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="border-top:1px solid #eef0f3; padding-top:14px; display:flex; align-items:center; gap:10px">
+          <div style="width:30px; height:30px; border-radius:50%; background:#e0e7ff; color:#2563eb; font:600 12px/30px inherit; text-align:center; flex:none">P</div>
+          <div style="flex:1; min-width:0"><div style="font:600 12px/1.3 inherit; color:#1f2937">Personal</div><div style="font:400 11px/1.3 inherit; color:#9ca3af">Local file</div></div>
+        </div>
+      </div>
+      <div style="flex:1; background:#f9fafb; display:flex; align-items:center; justify-content:center; padding:40px">
+        <div style="text-align:center; max-width:380px">
+          <div style="width:72px; height:72px; border-radius:18px; background:#eff6ff; display:flex; align-items:center; justify-content:center; margin:0 auto 22px"><div style="width:30px; height:30px; display:grid; grid-template-columns:1fr 1fr; gap:4px"><div style="background:#bcd3fb; border-radius:3px"></div><div style="background:#bcd3fb; border-radius:3px"></div><div style="background:#bcd3fb; border-radius:3px"></div><div style="background:#2563eb; border-radius:3px"></div></div></div>
+          <div style="font:700 20px/1.3 inherit; color:#1f2937; margin-bottom:8px">Welcome to Budetau</div>
+          <div style="font:400 14px/1.6 inherit; color:#6b7280; margin-bottom:24px">Your money lives in one private file on this Mac — no accounts, no cloud. Log your first transaction to start seeing your month at a glance.</div>
+          <div style="display:flex; gap:10px; justify-content:center">
+            <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:11px 18px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:8px"><span style="font-size:15px; line-height:1">+</span>Add a transaction</button>
+            <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:11px 18px; border-radius:8px; cursor:pointer">Set a budget</button>
+          </div>
+          <div style="font:500 12px/1 inherit; color:#9ca3af; margin-top:18px">Tip: press <span style="background:#eef0f3; border:1px solid #e0e2e6; border-radius:5px; padding:2px 6px; font-weight:600; color:#4b5563">⌘K</span> anytime to add</div>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute; right:22px; bottom:22px; width:50px; height:50px; border-radius:50%; background:#2563eb; box-shadow:0 6px 18px rgba(37,99,235,.45); z-index:5"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:18px; height:2.5px; background:#fff; border-radius:2px"></div><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:2.5px; height:18px; background:#fff; border-radius:2px"></div></div>
+  </div>
+</div>
+
+<!-- ===================== TRANSACTIONS — LIGHT (populated) ===================== -->
+<div style="position:absolute; left:0; top:2780px; width:1200px" class="scr" data-screen-label="Transactions · Light">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Transactions — Light · populated</div>
+  <div style="position:relative; background:#fff; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <div style="height:40px; background:#fff; border-bottom:1px solid #eef0f3; display:flex; align-items:center; padding:0 14px; gap:8px">
+      <div style="width:12px; height:12px; border-radius:50%; background:#ff5f57"></div><div style="width:12px; height:12px; border-radius:50%; background:#febc2e"></div><div style="width:12px; height:12px; border-radius:50%; background:#28c840"></div>
+      <div style="flex:1; text-align:center; font:500 12px/1 inherit; color:#9ca3af">Budetau — budget.db</div><div style="width:54px"></div>
+    </div>
+    <div style="display:flex; align-items:stretch">
+      <!-- sidebar -->
+      <div style="width:228px; background:#fbfbfc; border-right:1px solid #eef0f3; padding:18px 14px; display:flex; flex-direction:column">
+        <div style="display:flex; align-items:center; gap:10px; padding:4px 8px 22px"><div style="width:28px; height:28px; border-radius:8px; background:#2563eb; position:relative; flex:none"><div style="position:absolute; left:8px; top:8px; width:12px; height:12px; border-radius:50%; border:2.5px solid #fff"></div></div><div style="font:700 16px/1 inherit; color:#1f2937; letter-spacing:-0.01em">Budetau</div></div>
+        <div style="display:flex; flex-direction:column; gap:3px">
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563"><div style="width:16px; height:16px; display:grid; grid-template-columns:1fr 1fr; gap:2px; flex:none"><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div></div><span style="font:500 13px/1 inherit">Dashboard</span></div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; background:#eff6ff; color:#2563eb"><div style="width:16px; height:16px; display:flex; flex-direction:column; justify-content:center; gap:3px; flex:none"><div style="height:2px; width:100%; background:#2563eb; border-radius:2px"></div><div style="height:2px; width:75%; background:#2563eb; border-radius:2px"></div><div style="height:2px; width:90%; background:#2563eb; border-radius:2px"></div></div><span style="font:600 13px/1 inherit">Transactions</span></div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563"><div style="width:16px; height:16px; border-radius:50%; border:2px solid #9ca3af; position:relative; flex:none"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:5px; height:5px; border-radius:50%; background:#9ca3af"></div></div><span style="font:500 13px/1 inherit">Settings</span></div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="border-top:1px solid #eef0f3; padding-top:14px; display:flex; align-items:center; gap:10px"><div style="width:30px; height:30px; border-radius:50%; background:#e0e7ff; color:#2563eb; font:600 12px/30px inherit; text-align:center; flex:none">P</div><div style="flex:1; min-width:0"><div style="font:600 12px/1.3 inherit; color:#1f2937">Personal</div><div style="font:400 11px/1.3 inherit; color:#9ca3af">Local file</div></div></div>
+      </div>
+      <!-- main -->
+      <div style="flex:1; background:#f9fafb; padding:24px 28px 30px; min-height:600px">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px">
+          <div><div style="font:700 24px/1.1 inherit; color:#1f2937; letter-spacing:-0.01em">Transactions</div><div style="font:400 13px/1.4 inherit; color:#9ca3af; margin-top:3px">7 transactions · June 2026</div></div>
+          <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:8px"><span style="font-size:15px; line-height:1">+</span>Add</button>
+        </div>
+        <!-- search + filters -->
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px">
+          <div style="flex:1; display:flex; align-items:center; gap:9px; height:40px; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:0 12px"><div style="width:14px; height:14px; border:2px solid #9ca3af; border-radius:50%; position:relative; flex:none"><div style="position:absolute; right:-4px; bottom:-3px; width:6px; height:2px; background:#9ca3af; transform:rotate(45deg); border-radius:2px"></div></div><span style="font:400 14px/1 inherit; color:#9ca3af">Search note or category…</span></div>
+          <div style="display:flex; align-items:center; gap:6px; height:40px; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:0 12px; font:500 13px/1 inherit; color:#4b5563">All accounts <span style="color:#9ca3af; font-size:10px">▾</span></div>
+          <div style="display:flex; align-items:center; gap:6px; height:40px; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:0 12px; font:500 13px/1 inherit; color:#4b5563">Type <span style="color:#9ca3af; font-size:10px">▾</span></div>
+          <div style="display:flex; align-items:center; gap:6px; height:40px; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:0 12px; font:500 13px/1 inherit; color:#4b5563">June 2026 <span style="color:#9ca3af; font-size:10px">▾</span></div>
+        </div>
+        <!-- active filter chips -->
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:18px">
+          <span style="font:500 12px/1 inherit; color:#9ca3af">Filters:</span>
+          <span style="display:inline-flex; align-items:center; gap:7px; font:600 12px/1 inherit; color:#2563eb; background:#eff6ff; border:1px solid #cfe0fd; padding:6px 10px; border-radius:999px"><span style="width:7px; height:7px; border-radius:50%; background:#E57373"></span>Dining Out <span style="color:#7aa7f0; font-size:13px">✕</span></span>
+          <span style="display:inline-flex; align-items:center; gap:7px; font:600 12px/1 inherit; color:#2563eb; background:#eff6ff; border:1px solid #cfe0fd; padding:6px 10px; border-radius:999px">Checking <span style="color:#7aa7f0; font-size:13px">✕</span></span>
+          <span style="font:500 12px/1 inherit; color:#9ca3af; cursor:pointer">Clear all</span>
+        </div>
+        <!-- list -->
+        <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; overflow:hidden; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+          <!-- day group -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 16px; background:#fbfbfc; border-bottom:1px solid #f1f3f5"><span style="font:600 12px/1 inherit; color:#6b7280">Today · Tue, Jun 24</span><span class="num" style="font:600 12px/1 inherit; color:#9ca3af">−$44.50</span></div>
+          <div style="display:flex; align-items:center; gap:14px; padding:13px 16px; border-bottom:1px solid #f4f5f7"><div style="width:36px; height:36px; border-radius:10px; background:#E57373; color:#fff; font:600 14px/36px inherit; text-align:center; flex:none">D</div><div style="flex:1; min-width:0"><div style="font:600 14px/1.3 inherit; color:#1f2937">Lunch</div><div style="font:400 12px/1.3 inherit; color:#9ca3af; margin-top:2px">Dining Out · Amex</div></div><span class="num" style="font:600 15px/1 inherit; color:#1f2937">−$14.50</span></div>
+          <!-- hover row with actions -->
+          <div style="display:flex; align-items:center; gap:14px; padding:13px 16px; border-bottom:1px solid #f4f5f7; background:#f9fafb"><div style="width:36px; height:36px; border-radius:10px; background:#FFB74D; color:#fff; font:600 14px/36px inherit; text-align:center; flex:none">T</div><div style="flex:1; min-width:0"><div style="font:600 14px/1.3 inherit; color:#1f2937">Metro Card</div><div style="font:400 12px/1.3 inherit; color:#9ca3af; margin-top:2px">Transport · Checking</div></div><div style="display:flex; align-items:center; gap:6px"><button style="font:600 12px/1 inherit; color:#2563eb; background:#fff; border:1px solid #d1d5db; padding:6px 11px; border-radius:7px; cursor:pointer">Edit</button><button style="font:600 12px/1 inherit; color:#dc2626; background:#fff; border:1px solid #f3c5c5; padding:6px 11px; border-radius:7px; cursor:pointer">Delete</button></div><span class="num" style="font:600 15px/1 inherit; color:#1f2937; min-width:72px; text-align:right">−$30.00</span></div>
+          <!-- day group -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 16px; background:#fbfbfc; border-top:1px solid #f1f3f5; border-bottom:1px solid #f1f3f5"><span style="font:600 12px/1 inherit; color:#6b7280">Mon, Jun 23</span><span class="num" style="font:600 12px/1 inherit; color:#9ca3af">−$48.16</span></div>
+          <div style="display:flex; align-items:center; gap:14px; padding:13px 16px; border-bottom:1px solid #f4f5f7"><div style="width:36px; height:36px; border-radius:10px; background:#81C784; color:#fff; font:600 14px/36px inherit; text-align:center; flex:none">G</div><div style="flex:1; min-width:0"><div style="font:600 14px/1.3 inherit; color:#1f2937">Trader Joe’s</div><div style="font:400 12px/1.3 inherit; color:#9ca3af; margin-top:2px">Groceries · Checking</div></div><span class="num" style="font:600 15px/1 inherit; color:#1f2937">−$48.16</span></div>
+          <div style="display:flex; align-items:center; gap:14px; padding:13px 16px; border-bottom:1px solid #f4f5f7"><div style="width:36px; height:36px; border-radius:10px; background:#eef0f3; color:#6b7280; font:600 15px/36px inherit; text-align:center; flex:none">⇄</div><div style="flex:1; min-width:0"><div style="font:600 14px/1.3 inherit; color:#1f2937">Transfer to Savings</div><div style="font:400 12px/1.3 inherit; color:#9ca3af; margin-top:2px">Transfer · Checking → Savings</div></div><span class="num" style="font:600 15px/1 inherit; color:#6b7280">$500.00</span></div>
+          <!-- day group -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 16px; background:#fbfbfc; border-top:1px solid #f1f3f5; border-bottom:1px solid #f1f3f5"><span style="font:600 12px/1 inherit; color:#6b7280">Sun, Jun 22</span><span class="num" style="font:600 12px/1 inherit; color:#9ca3af">−$103.69</span></div>
+          <div style="display:flex; align-items:center; gap:14px; padding:13px 16px; border-bottom:1px solid #f4f5f7"><div style="width:36px; height:36px; border-radius:10px; background:#BA68C8; color:#fff; font:600 14px/36px inherit; text-align:center; flex:none">E</div><div style="flex:1; min-width:0"><div style="font:600 14px/1.3 inherit; color:#1f2937">Netflix</div><div style="font:400 12px/1.3 inherit; color:#9ca3af; margin-top:2px">Entertainment · Amex</div></div><span class="num" style="font:600 15px/1 inherit; color:#1f2937">−$15.49</span></div>
+          <div style="display:flex; align-items:center; gap:14px; padding:13px 16px; border-bottom:1px solid #f4f5f7"><div style="width:36px; height:36px; border-radius:10px; background:#4DD0E1; color:#fff; font:600 14px/36px inherit; text-align:center; flex:none">U</div><div style="flex:1; min-width:0"><div style="font:600 14px/1.3 inherit; color:#1f2937">Electric Bill</div><div style="font:400 12px/1.3 inherit; color:#9ca3af; margin-top:2px">Utilities · Checking</div></div><span class="num" style="font:600 15px/1 inherit; color:#1f2937">−$88.20</span></div>
+          <!-- day group income -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 16px; background:#fbfbfc; border-top:1px solid #f1f3f5; border-bottom:1px solid #f1f3f5"><span style="font:600 12px/1 inherit; color:#6b7280">Mon, Jun 1</span><span class="num" style="font:600 12px/1 inherit; color:#059669">+$4,200.00</span></div>
+          <div style="display:flex; align-items:center; gap:14px; padding:13px 16px"><div style="width:36px; height:36px; border-radius:10px; background:#4DB6AC; color:#fff; font:600 14px/36px inherit; text-align:center; flex:none">S</div><div style="flex:1; min-width:0"><div style="font:600 14px/1.3 inherit; color:#1f2937">Salary</div><div style="font:400 12px/1.3 inherit; color:#9ca3af; margin-top:2px">Salary · Checking</div></div><span class="num" style="font:600 15px/1 inherit; color:#059669">+$4,200.00</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TRANSACTIONS — NO RESULTS ===================== -->
+<div style="position:absolute; left:1320px; top:2780px; width:1200px" class="scr" data-screen-label="Transactions · No results">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Transactions — No results (filters matched nothing)</div>
+  <div style="position:relative; background:#fff; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <div style="height:40px; background:#fff; border-bottom:1px solid #eef0f3; display:flex; align-items:center; padding:0 14px; gap:8px">
+      <div style="width:12px; height:12px; border-radius:50%; background:#ff5f57"></div><div style="width:12px; height:12px; border-radius:50%; background:#febc2e"></div><div style="width:12px; height:12px; border-radius:50%; background:#28c840"></div>
+      <div style="flex:1; text-align:center; font:500 12px/1 inherit; color:#9ca3af">Budetau — budget.db</div><div style="width:54px"></div>
+    </div>
+    <div style="display:flex; align-items:stretch">
+      <div style="width:228px; background:#fbfbfc; border-right:1px solid #eef0f3; padding:18px 14px; display:flex; flex-direction:column">
+        <div style="display:flex; align-items:center; gap:10px; padding:4px 8px 22px"><div style="width:28px; height:28px; border-radius:8px; background:#2563eb; position:relative; flex:none"><div style="position:absolute; left:8px; top:8px; width:12px; height:12px; border-radius:50%; border:2.5px solid #fff"></div></div><div style="font:700 16px/1 inherit; color:#1f2937; letter-spacing:-0.01em">Budetau</div></div>
+        <div style="display:flex; flex-direction:column; gap:3px">
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563"><div style="width:16px; height:16px; display:grid; grid-template-columns:1fr 1fr; gap:2px; flex:none"><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div></div><span style="font:500 13px/1 inherit">Dashboard</span></div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; background:#eff6ff; color:#2563eb"><div style="width:16px; height:16px; display:flex; flex-direction:column; justify-content:center; gap:3px; flex:none"><div style="height:2px; width:100%; background:#2563eb; border-radius:2px"></div><div style="height:2px; width:75%; background:#2563eb; border-radius:2px"></div><div style="height:2px; width:90%; background:#2563eb; border-radius:2px"></div></div><span style="font:600 13px/1 inherit">Transactions</span></div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563"><div style="width:16px; height:16px; border-radius:50%; border:2px solid #9ca3af; position:relative; flex:none"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:5px; height:5px; border-radius:50%; background:#9ca3af"></div></div><span style="font:500 13px/1 inherit">Settings</span></div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="border-top:1px solid #eef0f3; padding-top:14px; display:flex; align-items:center; gap:10px"><div style="width:30px; height:30px; border-radius:50%; background:#e0e7ff; color:#2563eb; font:600 12px/30px inherit; text-align:center; flex:none">P</div><div style="flex:1; min-width:0"><div style="font:600 12px/1.3 inherit; color:#1f2937">Personal</div><div style="font:400 11px/1.3 inherit; color:#9ca3af">Local file</div></div></div>
+      </div>
+      <div style="flex:1; background:#f9fafb; padding:24px 28px 30px; min-height:600px">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px">
+          <div><div style="font:700 24px/1.1 inherit; color:#1f2937; letter-spacing:-0.01em">Transactions</div><div style="font:400 13px/1.4 inherit; color:#9ca3af; margin-top:3px">0 of 7 match your filters</div></div>
+          <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:8px"><span style="font-size:15px; line-height:1">+</span>Add</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px">
+          <div style="flex:1; display:flex; align-items:center; gap:9px; height:40px; background:#fff; border:1px solid #2563eb; border-radius:8px; padding:0 12px; box-shadow:0 0 0 3px rgba(37,99,235,.18)"><div style="width:14px; height:14px; border:2px solid #6b7280; border-radius:50%; position:relative; flex:none"><div style="position:absolute; right:-4px; bottom:-3px; width:6px; height:2px; background:#6b7280; transform:rotate(45deg); border-radius:2px"></div></div><span style="font:400 14px/1 inherit; color:#1f2937">concert tickets</span></div>
+          <div style="display:flex; align-items:center; gap:6px; height:40px; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:0 12px; font:500 13px/1 inherit; color:#4b5563">All accounts <span style="color:#9ca3af; font-size:10px">▾</span></div>
+          <div style="display:flex; align-items:center; gap:6px; height:40px; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:0 12px; font:500 13px/1 inherit; color:#4b5563">Type <span style="color:#9ca3af; font-size:10px">▾</span></div>
+          <div style="display:flex; align-items:center; gap:6px; height:40px; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:0 12px; font:500 13px/1 inherit; color:#4b5563">June 2026 <span style="color:#9ca3af; font-size:10px">▾</span></div>
+        </div>
+        <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:60px 40px; box-shadow:0 1px 2px rgba(16,24,40,.04); display:flex; flex-direction:column; align-items:center; text-align:center">
+          <div style="width:60px; height:60px; border-radius:50%; background:#f1f3f5; display:flex; align-items:center; justify-content:center; margin-bottom:18px"><div style="width:22px; height:22px; border:2.5px solid #c2c7cf; border-radius:50%; position:relative"><div style="position:absolute; right:-5px; bottom:-4px; width:9px; height:2.5px; background:#c2c7cf; transform:rotate(45deg); border-radius:2px"></div></div></div>
+          <div style="font:600 16px/1.3 inherit; color:#1f2937; margin-bottom:6px">No transactions match “concert tickets”</div>
+          <div style="font:400 14px/1.6 inherit; color:#6b7280; max-width:340px; margin-bottom:20px">Try a different search term, or widen your filters to see more results.</div>
+          <button style="font:600 13px/1 inherit; color:#2563eb; background:#eff6ff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer">Clear search &amp; filters</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== QUICK-ADD — COLLAPSED ===================== -->
+<div style="position:absolute; left:0; top:3810px; width:1200px" class="scr" data-screen-label="Quick-Add · Collapsed">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Quick-Add — default (streamlined) · ⌘K · autocomplete open</div>
+  <div style="position:relative; height:660px; background:#e9ebee; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <!-- ghost app behind -->
+    <div style="position:absolute; inset:0; padding:28px 32px; opacity:.5">
+      <div style="height:26px; width:200px; background:#fff; border-radius:6px; margin-bottom:18px"></div>
+      <div style="height:120px; background:#fff; border-radius:12px; margin-bottom:16px"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px"><div style="height:120px; background:#fff; border-radius:12px"></div><div style="height:120px; background:#fff; border-radius:12px"></div><div style="height:120px; background:#fff; border-radius:12px"></div></div>
+    </div>
+    <!-- scrim + modal -->
+    <div style="position:absolute; inset:0; background:rgba(15,17,22,.42); display:flex; align-items:flex-start; justify-content:center; padding-top:54px">
+      <div style="width:440px; background:#fff; border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,.32); overflow:hidden">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px"><div style="font:600 15px/1 inherit; color:#1f2937">New transaction</div><span style="font:600 11px/1 inherit; color:#9ca3af; background:#f1f3f5; border:1px solid #e6e8ec; border-radius:6px; padding:4px 7px">Esc</span></div>
+        <div style="padding:4px 20px 8px; display:flex; flex-direction:column; gap:16px">
+          <!-- amount -->
+          <div style="display:flex; gap:11px; align-items:flex-start">
+            <div style="width:18px; height:18px; border-radius:50%; background:#2563eb; color:#fff; font:600 10px/18px inherit; text-align:center; flex:none; margin-top:24px">1</div>
+            <div style="flex:1"><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Amount</div><div style="display:flex; align-items:center; height:50px; border:1px solid #2563eb; border-radius:8px; padding:0 14px; background:#fff; box-shadow:0 0 0 3px rgba(37,99,235,.3)"><span class="num" style="font:600 24px/1 inherit; color:#9ca3af">$</span><span class="num" style="font:600 24px/1 inherit; color:#1f2937; margin-left:3px">12.50</span><span style="width:2px; height:24px; background:#2563eb; margin-left:2px"></span></div></div>
+          </div>
+          <!-- category w/ autocomplete -->
+          <div style="display:flex; gap:11px; align-items:flex-start">
+            <div style="width:18px; height:18px; border-radius:50%; background:#2563eb; color:#fff; font:600 10px/18px inherit; text-align:center; flex:none; margin-top:24px">2</div>
+            <div style="flex:1; position:relative"><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Category</div><div style="display:flex; align-items:center; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff; font:400 14px/1 inherit; color:#1f2937">Din<span style="width:1px; height:18px; background:#1f2937; margin-left:1px"></span></div>
+              <div style="position:absolute; left:0; right:0; top:74px; background:#fff; border:1px solid #e5e7eb; border-radius:10px; box-shadow:0 12px 28px rgba(16,24,40,.16); padding:5px; z-index:2">
+                <div style="display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:7px; background:#eff6ff"><span style="width:10px; height:10px; border-radius:50%; background:#E57373"></span><span style="font:600 13px/1 inherit; color:#1f2937">Dining Out</span><span style="margin-left:auto; font:500 11px/1 inherit; color:#9ca3af">↵</span></div>
+                <div style="display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:7px"><span style="width:10px; height:10px; border-radius:50%; background:#4DD0E1"></span><span style="font:500 13px/1 inherit; color:#1f2937">Dining — Coffee</span></div>
+                <div style="display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:7px"><span style="width:10px; height:10px; border-radius:50%; background:#9ca3af"></span><span style="font:500 13px/1 inherit; color:#6b7280">+ Create “Din”</span></div>
+              </div>
+            </div>
+          </div>
+          <!-- date -->
+          <div style="display:flex; gap:11px; align-items:flex-start">
+            <div style="width:18px; height:18px; border-radius:50%; background:#2563eb; color:#fff; font:600 10px/18px inherit; text-align:center; flex:none; margin-top:24px">3</div>
+            <div style="flex:1"><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Date</div><div style="display:flex; align-items:center; justify-content:space-between; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="font:400 14px/1 inherit; color:#1f2937">Today · Jun 25, 2026</span><span style="font:500 12px/1 inherit; color:#9ca3af">📅</span></div></div>
+          </div>
+        </div>
+        <!-- add details toggle -->
+        <div style="padding:16px 20px 4px; margin-left:29px"><div style="display:flex; align-items:center; gap:10px"><div style="width:38px; height:22px; background:#d1d5db; border-radius:999px; position:relative; flex:none"><div style="position:absolute; top:2px; left:2px; width:18px; height:18px; background:#fff; border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,.2)"></div></div><div><span style="font:500 13px/1 inherit; color:#1f2937">Add details</span> <span style="font:400 12px/1 inherit; color:#9ca3af">— note, account, type</span></div></div></div>
+        <!-- footer -->
+        <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:16px 20px; margin-top:14px; border-top:1px solid #f1f3f5">
+          <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:10px 15px; border-radius:8px; cursor:pointer">Cancel</button>
+          <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:8px">Add <span class="num">$12.50</span><span style="opacity:.7">↵</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== QUICK-ADD — EXPANDED ===================== -->
+<div style="position:absolute; left:1320px; top:3810px; width:1200px" class="scr" data-screen-label="Quick-Add · Expanded">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Quick-Add — “Add details” expanded · type = Transfer (destination revealed)</div>
+  <div style="position:relative; height:660px; background:#e9ebee; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <div style="position:absolute; inset:0; padding:28px 32px; opacity:.5">
+      <div style="height:26px; width:200px; background:#fff; border-radius:6px; margin-bottom:18px"></div>
+      <div style="height:120px; background:#fff; border-radius:12px; margin-bottom:16px"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px"><div style="height:120px; background:#fff; border-radius:12px"></div><div style="height:120px; background:#fff; border-radius:12px"></div><div style="height:120px; background:#fff; border-radius:12px"></div></div>
+    </div>
+    <div style="position:absolute; inset:0; background:rgba(15,17,22,.42); display:flex; align-items:flex-start; justify-content:center; padding-top:30px; overflow:auto">
+      <div style="width:440px; background:#fff; border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,.32); overflow:hidden">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px"><div style="font:600 15px/1 inherit; color:#1f2937">New transaction</div><span style="font:600 11px/1 inherit; color:#9ca3af; background:#f1f3f5; border:1px solid #e6e8ec; border-radius:6px; padding:4px 7px">Esc</span></div>
+        <div style="padding:4px 20px 8px; display:flex; flex-direction:column; gap:14px">
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Amount</div><div style="display:flex; align-items:center; height:48px; border:1px solid #d1d5db; border-radius:8px; padding:0 14px; background:#fff"><span class="num" style="font:600 22px/1 inherit; color:#9ca3af">$</span><span class="num" style="font:600 22px/1 inherit; color:#1f2937; margin-left:3px">500.00</span></div></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+            <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Category</div><div style="display:flex; align-items:center; gap:8px; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="width:10px; height:10px; border-radius:50%; background:#4DB6AC"></span><span style="font:400 14px/1 inherit; color:#1f2937">Savings</span></div></div>
+            <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Date</div><div style="display:flex; align-items:center; justify-content:space-between; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="font:400 14px/1 inherit; color:#1f2937">Jun 25</span><span style="color:#9ca3af">📅</span></div></div>
+          </div>
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Note</div><div style="display:flex; align-items:center; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff; font:400 14px/1 inherit; color:#1f2937">Monthly savings</div></div>
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Type</div><div style="display:inline-flex; background:#f1f3f5; border-radius:9px; padding:3px; gap:2px; width:100%"><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#6b7280; padding:8px 0; border-radius:7px">Expense</div><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#6b7280; padding:8px 0; border-radius:7px">Income</div><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#1f2937; background:#fff; padding:8px 0; border-radius:7px; box-shadow:0 1px 2px rgba(16,24,40,.1)">Transfer</div></div></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+            <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">From account</div><div style="display:flex; align-items:center; justify-content:space-between; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="font:400 14px/1 inherit; color:#1f2937">Checking</span><span style="color:#9ca3af; font-size:10px">▾</span></div></div>
+            <div><div style="font:600 12px/1 inherit; color:#2563eb; margin-bottom:7px">To account</div><div style="display:flex; align-items:center; justify-content:space-between; height:42px; border:1px solid #2563eb; border-radius:8px; padding:0 12px; background:#fff; box-shadow:0 0 0 3px rgba(37,99,235,.18)"><span style="font:400 14px/1 inherit; color:#1f2937">Savings</span><span style="color:#9ca3af; font-size:10px">▾</span></div></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding-top:2px"><div style="width:38px; height:22px; background:#2563eb; border-radius:999px; position:relative; flex:none"><div style="position:absolute; top:2px; right:2px; width:18px; height:18px; background:#fff; border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,.2)"></div></div><span style="font:500 13px/1 inherit; color:#1f2937">Details shown</span></div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:16px 20px; margin-top:8px; border-top:1px solid #f1f3f5">
+          <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:10px 15px; border-radius:8px; cursor:pointer">Cancel</button>
+          <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:8px">Add transfer <span style="opacity:.7">↵</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== QUICK-ADD — TYPE: EXPENSE ===================== -->
+<div style="position:absolute; left:2640px; top:3810px; width:1200px" class="scr" data-screen-label="Quick-Add · Expense">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Quick-Add — type = Expense</div>
+  <div style="position:relative; height:660px; background:#e9ebee; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <div style="position:absolute; inset:0; padding:28px 32px; opacity:.5">
+      <div style="height:26px; width:200px; background:#fff; border-radius:6px; margin-bottom:18px"></div>
+      <div style="height:120px; background:#fff; border-radius:12px; margin-bottom:16px"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px"><div style="height:120px; background:#fff; border-radius:12px"></div><div style="height:120px; background:#fff; border-radius:12px"></div><div style="height:120px; background:#fff; border-radius:12px"></div></div>
+    </div>
+    <div style="position:absolute; inset:0; background:rgba(15,17,22,.42); display:flex; align-items:flex-start; justify-content:center; padding-top:54px">
+      <div style="width:440px; background:#fff; border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,.32); overflow:hidden">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px"><div style="font:600 15px/1 inherit; color:#1f2937">New transaction</div><span style="font:600 11px/1 inherit; color:#9ca3af; background:#f1f3f5; border:1px solid #e6e8ec; border-radius:6px; padding:4px 7px">Esc</span></div>
+        <div style="padding:4px 20px 8px; display:flex; flex-direction:column; gap:14px">
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Amount</div><div style="display:flex; align-items:center; height:48px; border:1px solid #d1d5db; border-radius:8px; padding:0 14px; background:#fff"><span class="num" style="font:600 22px/1 inherit; color:#9ca3af">$</span><span class="num" style="font:600 22px/1 inherit; color:#1f2937; margin-left:3px">14.50</span></div></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+            <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Category</div><div style="display:flex; align-items:center; gap:8px; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="width:10px; height:10px; border-radius:50%; background:#E57373"></span><span style="font:400 14px/1 inherit; color:#1f2937">Dining Out</span></div></div>
+            <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Date</div><div style="display:flex; align-items:center; justify-content:space-between; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="font:400 14px/1 inherit; color:#1f2937">Jun 25</span><span style="color:#9ca3af">📅</span></div></div>
+          </div>
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Note</div><div style="display:flex; align-items:center; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff; font:400 14px/1 inherit; color:#1f2937">Lunch</div></div>
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Type</div><div style="display:inline-flex; background:#f1f3f5; border-radius:9px; padding:3px; gap:2px; width:100%"><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#1f2937; background:#fff; padding:8px 0; border-radius:7px; box-shadow:0 1px 2px rgba(16,24,40,.1)">Expense</div><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#6b7280; padding:8px 0; border-radius:7px">Income</div><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#6b7280; padding:8px 0; border-radius:7px">Transfer</div></div></div>
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Account</div><div style="display:flex; align-items:center; justify-content:space-between; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="font:400 14px/1 inherit; color:#1f2937">Amex</span><span style="color:#9ca3af; font-size:10px">▾</span></div></div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:16px 20px; margin-top:8px; border-top:1px solid #f1f3f5">
+          <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:10px 15px; border-radius:8px; cursor:pointer">Cancel</button>
+          <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:8px">Add expense <span style="opacity:.7">↵</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== QUICK-ADD — TYPE: INCOME ===================== -->
+<div style="position:absolute; left:3960px; top:3810px; width:1200px" class="scr" data-screen-label="Quick-Add · Income">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Quick-Add — type = Income</div>
+  <div style="position:relative; height:660px; background:#e9ebee; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <div style="position:absolute; inset:0; padding:28px 32px; opacity:.5">
+      <div style="height:26px; width:200px; background:#fff; border-radius:6px; margin-bottom:18px"></div>
+      <div style="height:120px; background:#fff; border-radius:12px; margin-bottom:16px"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px"><div style="height:120px; background:#fff; border-radius:12px"></div><div style="height:120px; background:#fff; border-radius:12px"></div><div style="height:120px; background:#fff; border-radius:12px"></div></div>
+    </div>
+    <div style="position:absolute; inset:0; background:rgba(15,17,22,.42); display:flex; align-items:flex-start; justify-content:center; padding-top:54px">
+      <div style="width:440px; background:#fff; border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,.32); overflow:hidden">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px"><div style="font:600 15px/1 inherit; color:#1f2937">New transaction</div><span style="font:600 11px/1 inherit; color:#9ca3af; background:#f1f3f5; border:1px solid #e6e8ec; border-radius:6px; padding:4px 7px">Esc</span></div>
+        <div style="padding:4px 20px 8px; display:flex; flex-direction:column; gap:14px">
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Amount</div><div style="display:flex; align-items:center; height:48px; border:1px solid #059669; border-radius:8px; padding:0 14px; background:#fff"><span class="num" style="font:600 22px/1 inherit; color:#059669">+$</span><span class="num" style="font:600 22px/1 inherit; color:#1f2937; margin-left:3px">4,200.00</span></div></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+            <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Category</div><div style="display:flex; align-items:center; gap:8px; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="width:10px; height:10px; border-radius:50%; background:#4DB6AC"></span><span style="font:400 14px/1 inherit; color:#1f2937">Salary</span></div></div>
+            <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Date</div><div style="display:flex; align-items:center; justify-content:space-between; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="font:400 14px/1 inherit; color:#1f2937">Jun 1</span><span style="color:#9ca3af">📅</span></div></div>
+          </div>
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Note</div><div style="display:flex; align-items:center; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff; font:400 14px/1 inherit; color:#1f2937">June paycheck</div></div>
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Type</div><div style="display:inline-flex; background:#f1f3f5; border-radius:9px; padding:3px; gap:2px; width:100%"><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#6b7280; padding:8px 0; border-radius:7px">Expense</div><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#047857; background:#fff; padding:8px 0; border-radius:7px; box-shadow:0 1px 2px rgba(16,24,40,.1)">Income</div><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#6b7280; padding:8px 0; border-radius:7px">Transfer</div></div></div>
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Account</div><div style="display:flex; align-items:center; justify-content:space-between; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="font:400 14px/1 inherit; color:#1f2937">Checking</span><span style="color:#9ca3af; font-size:10px">▾</span></div></div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:16px 20px; margin-top:8px; border-top:1px solid #f1f3f5">
+          <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:10px 15px; border-radius:8px; cursor:pointer">Cancel</button>
+          <button style="font:600 13px/1 inherit; color:#fff; background:#059669; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:8px">Add income <span style="opacity:.7">↵</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SETTINGS — LIGHT ===================== -->
+<div style="position:absolute; left:0; top:4680px; width:1200px" class="scr" data-screen-label="Settings · Light">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Settings — Light</div>
+  <div style="position:relative; background:#fff; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <div style="height:40px; background:#fff; border-bottom:1px solid #eef0f3; display:flex; align-items:center; padding:0 14px; gap:8px">
+      <div style="width:12px; height:12px; border-radius:50%; background:#ff5f57"></div><div style="width:12px; height:12px; border-radius:50%; background:#febc2e"></div><div style="width:12px; height:12px; border-radius:50%; background:#28c840"></div>
+      <div style="flex:1; text-align:center; font:500 12px/1 inherit; color:#9ca3af">Budetau — budget.db</div><div style="width:54px"></div>
+    </div>
+    <div style="display:flex; align-items:stretch">
+      <div style="width:228px; background:#fbfbfc; border-right:1px solid #eef0f3; padding:18px 14px; display:flex; flex-direction:column">
+        <div style="display:flex; align-items:center; gap:10px; padding:4px 8px 22px"><div style="width:28px; height:28px; border-radius:8px; background:#2563eb; position:relative; flex:none"><div style="position:absolute; left:8px; top:8px; width:12px; height:12px; border-radius:50%; border:2.5px solid #fff"></div></div><div style="font:700 16px/1 inherit; color:#1f2937; letter-spacing:-0.01em">Budetau</div></div>
+        <div style="display:flex; flex-direction:column; gap:3px">
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563"><div style="width:16px; height:16px; display:grid; grid-template-columns:1fr 1fr; gap:2px; flex:none"><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div></div><span style="font:500 13px/1 inherit">Dashboard</span></div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563"><div style="width:16px; height:16px; display:flex; flex-direction:column; justify-content:center; gap:3px; flex:none"><div style="height:2px; width:100%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:75%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:90%; background:#9ca3af; border-radius:2px"></div></div><span style="font:500 13px/1 inherit">Transactions</span></div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; background:#eff6ff; color:#2563eb"><div style="width:16px; height:16px; border-radius:50%; border:2px solid #2563eb; position:relative; flex:none"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:5px; height:5px; border-radius:50%; background:#2563eb"></div></div><span style="font:600 13px/1 inherit">Settings</span></div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="border-top:1px solid #eef0f3; padding-top:14px; display:flex; align-items:center; gap:10px"><div style="width:30px; height:30px; border-radius:50%; background:#e0e7ff; color:#2563eb; font:600 12px/30px inherit; text-align:center; flex:none">P</div><div style="flex:1; min-width:0"><div style="font:600 12px/1.3 inherit; color:#1f2937">Personal</div><div style="font:400 11px/1.3 inherit; color:#9ca3af">Local file</div></div></div>
+      </div>
+      <div style="flex:1; background:#f9fafb; padding:24px 28px 30px; min-height:600px">
+        <div style="margin-bottom:20px"><div style="font:700 24px/1.1 inherit; color:#1f2937; letter-spacing:-0.01em">Settings</div></div>
+        <div style="max-width:640px; display:flex; flex-direction:column; gap:16px">
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:20px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px"><span style="font:600 15px/1 inherit; color:#1f2937">Database</span><span style="display:inline-flex; align-items:center; gap:5px; font:600 11px/1 inherit; color:#059669; background:#ecfdf3; padding:4px 8px; border-radius:999px"><span style="width:6px; height:6px; border-radius:50%; background:#059669"></span>On this Mac</span></div>
+            <div style="font:400 13px/1.5 inherit; color:#6b7280; margin-bottom:16px">All your data lives in one private file. No accounts, no servers — nothing leaves your device.</div>
+            <div style="display:flex; align-items:center; gap:12px; background:#f9fafb; border:1px solid #eef0f3; border-radius:9px; padding:12px 14px">
+              <div style="width:34px; height:34px; border-radius:8px; background:#eef2ff; display:flex; align-items:center; justify-content:center; flex:none"><div style="width:16px; height:13px; border:2px solid #2563eb; border-radius:3px"></div></div>
+              <div style="flex:1; min-width:0"><div style="font:500 12px/1.4 inherit; color:#9ca3af; margin-bottom:2px">File location</div><div class="num" style="font:500 13px/1.4 inherit; color:#1f2937; word-break:break-all">~/Library/Mobile Documents/iCloud~Budetau/budget.db</div></div>
+              <button style="font:600 12px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:8px 12px; border-radius:7px; cursor:pointer; white-space:nowrap; flex:none">Reveal in Finder</button>
+            </div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:20px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="font:600 15px/1 inherit; color:#1f2937; margin-bottom:4px">Appearance</div>
+            <div style="font:400 13px/1.5 inherit; color:#6b7280; margin-bottom:16px">Choose how Budetau looks. System follows your macOS setting.</div>
+            <div style="display:inline-flex; background:#f1f3f5; border-radius:10px; padding:3px; gap:2px">
+              <div style="font:600 13px/1 inherit; color:#1f2937; background:#fff; padding:9px 20px; border-radius:8px; box-shadow:0 1px 2px rgba(16,24,40,.1)">Light</div>
+              <div style="font:600 13px/1 inherit; color:#6b7280; padding:9px 20px; border-radius:8px">Dark</div>
+              <div style="font:600 13px/1 inherit; color:#6b7280; padding:9px 20px; border-radius:8px">System</div>
+            </div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:20px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="font:600 15px/1 inherit; color:#1f2937; margin-bottom:4px">Backup &amp; restore</div>
+            <div style="font:400 13px/1.5 inherit; color:#6b7280; margin-bottom:16px">Export a timestamped copy of your database, or restore from a backup file.</div>
+            <div style="display:flex; gap:10px; margin-bottom:14px">
+              <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:10px 16px; border-radius:8px; cursor:pointer">Export backup…</button>
+              <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:10px 16px; border-radius:8px; cursor:pointer">Restore from file…</button>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:10px; background:#fffaeb; border:1px solid #fde9c8; border-radius:9px; padding:11px 13px">
+              <div style="width:18px; height:18px; border-radius:50%; background:#d97706; color:#fff; font:700 11px/18px inherit; text-align:center; flex:none">!</div>
+              <div style="font:400 12px/1.5 inherit; color:#92400e">Restoring <strong style="font-weight:600">overwrites</strong> your current data. Budetau makes an automatic backup first.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== NARROW BREAKPOINT (720px) ===================== -->
+<div style="position:absolute; left:0; top:5560px; width:740px" class="scr" data-screen-label="Dashboard · Narrow 720">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Narrow breakpoint — 720px · sidebar collapses to icon rail</div>
+  <div style="position:relative; width:720px; background:#fff; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <div style="height:38px; background:#fff; border-bottom:1px solid #eef0f3; display:flex; align-items:center; padding:0 13px; gap:8px">
+      <div style="width:11px; height:11px; border-radius:50%; background:#ff5f57"></div><div style="width:11px; height:11px; border-radius:50%; background:#febc2e"></div><div style="width:11px; height:11px; border-radius:50%; background:#28c840"></div>
+      <div style="flex:1; text-align:center; font:500 11px/1 inherit; color:#9ca3af">Budetau</div><div style="width:48px"></div>
+    </div>
+    <div style="display:flex; align-items:stretch">
+      <!-- icon rail -->
+      <div style="width:60px; background:#fbfbfc; border-right:1px solid #eef0f3; padding:16px 0; display:flex; flex-direction:column; align-items:center; gap:6px">
+        <div style="width:30px; height:30px; border-radius:8px; background:#2563eb; position:relative; margin-bottom:12px; flex:none"><div style="position:absolute; left:9px; top:9px; width:12px; height:12px; border-radius:50%; border:2.5px solid #fff"></div></div>
+        <div style="width:38px; height:38px; border-radius:9px; background:#eff6ff; display:flex; align-items:center; justify-content:center"><div style="width:16px; height:16px; display:grid; grid-template-columns:1fr 1fr; gap:2px"><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div><div style="background:#2563eb; border-radius:1.5px"></div></div></div>
+        <div style="width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center"><div style="width:16px; height:16px; display:flex; flex-direction:column; justify-content:center; gap:3px"><div style="height:2px; width:100%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:75%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:90%; background:#9ca3af; border-radius:2px"></div></div></div>
+        <div style="width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center"><div style="width:16px; height:16px; border-radius:50%; border:2px solid #9ca3af; position:relative"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:5px; height:5px; border-radius:50%; background:#9ca3af"></div></div></div>
+        <div style="flex:1"></div>
+        <div style="width:30px; height:30px; border-radius:50%; background:#e0e7ff; color:#2563eb; font:600 12px/30px inherit; text-align:center; flex:none">P</div>
+      </div>
+      <!-- main -->
+      <div style="flex:1; background:#f9fafb; padding:18px 20px 24px; min-height:520px">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px">
+          <div style="font:700 20px/1.1 inherit; color:#1f2937; letter-spacing:-0.01em">Dashboard</div>
+          <div style="display:flex; align-items:center; gap:6px; background:#fff; border:1px solid #e5e7eb; border-radius:999px; padding:5px 7px"><span style="color:#6b7280; font:600 13px/1 inherit">‹</span><span style="font:600 12px/1 inherit; color:#1f2937">June 2026</span><span style="color:#6b7280; font:600 13px/1 inherit">›</span></div>
+        </div>
+        <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:18px; margin-bottom:14px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+          <div style="font:600 11px/1 inherit; color:#9ca3af; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px">Net this month</div>
+          <div class="num" style="font:700 30px/1 inherit; color:#059669; letter-spacing:-0.02em; margin-bottom:14px">+$1,352.37</div>
+          <div style="display:flex; gap:24px">
+            <div><div style="font:500 11px/1 inherit; color:#9ca3af; margin-bottom:5px">Income</div><div class="num" style="font:700 17px/1 inherit; color:#1f2937">$4,200.00</div></div>
+            <div><div style="font:500 11px/1 inherit; color:#9ca3af; margin-bottom:5px">Spent</div><div class="num" style="font:700 17px/1 inherit; color:#1f2937">$2,847.63</div></div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; background:#fef3f2; border:1px solid #f7d4d4; border-left:3px solid #dc2626; border-radius:10px; padding:10px 12px; margin-bottom:16px"><div style="width:18px; height:18px; border-radius:50%; background:#dc2626; color:#fff; font:700 11px/18px inherit; text-align:center; flex:none">!</div><div style="flex:1; font:500 12px/1.4 inherit; color:#991b1b"><strong style="font-weight:600">Transport</strong> over budget — $164 of $150.</div></div>
+        <div style="font:600 14px/1 inherit; color:#1f2937; margin-bottom:12px">Budgets</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:14px"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px"><div style="display:flex; align-items:center; gap:7px"><span style="width:9px; height:9px; border-radius:50%; background:#81C784"></span><span style="font:600 13px/1 inherit; color:#1f2937">Groceries</span></div><span style="font:600 10px/1 inherit; color:#059669; background:#ecfdf3; padding:3px 7px; border-radius:999px">77%</span></div><div style="height:7px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:77%; height:100%; background:#059669; border-radius:999px"></div></div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af; margin-top:9px">$384 of $500</div></div>
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:14px"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px"><div style="display:flex; align-items:center; gap:7px"><span style="width:9px; height:9px; border-radius:50%; background:#E57373"></span><span style="font:600 13px/1 inherit; color:#1f2937">Dining Out</span></div><span style="font:600 10px/1 inherit; color:#b45309; background:#fffaeb; padding:3px 7px; border-radius:999px">95%</span></div><div style="height:7px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:95%; height:100%; background:#d97706; border-radius:999px"></div></div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af; margin-top:9px">$285 of $300</div></div>
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:14px"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px"><div style="display:flex; align-items:center; gap:7px"><span style="width:9px; height:9px; border-radius:50%; background:#FFB74D"></span><span style="font:600 13px/1 inherit; color:#1f2937">Transport</span></div><span style="font:600 10px/1 inherit; color:#dc2626; background:#fef3f2; padding:3px 7px; border-radius:999px">109%</span></div><div style="height:7px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:100%; height:100%; background:#dc2626; border-radius:999px"></div></div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af; margin-top:9px">$164 of $150</div></div>
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:14px"><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px"><div style="display:flex; align-items:center; gap:7px"><span style="width:9px; height:9px; border-radius:50%; background:#64B5F6"></span><span style="font:600 13px/1 inherit; color:#1f2937">Rent</span></div><span style="font:600 10px/1 inherit; color:#b45309; background:#fffaeb; padding:3px 7px; border-radius:999px">100%</span></div><div style="height:7px; background:#f1f3f5; border-radius:999px; overflow:hidden"><div style="width:100%; height:100%; background:#d97706; border-radius:999px"></div></div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af; margin-top:9px">$1,800 of $1,800</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute; right:18px; bottom:18px; width:46px; height:46px; border-radius:50%; background:#2563eb; box-shadow:0 6px 18px rgba(37,99,235,.45)"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:16px; height:2.5px; background:#fff; border-radius:2px"></div><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:2.5px; height:16px; background:#fff; border-radius:2px"></div></div>
+  </div>
+</div>
+
+<!-- ===================== REDLINES / NOTES ===================== -->
+<div style="position:absolute; left:820px; top:5560px; width:680px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Redlines — spacing &amp; responsive behavior</div>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); padding:24px; border:1px solid #eef0f3; display:flex; flex-direction:column; gap:22px">
+    <div>
+      <div style="font:600 13px/1 inherit; color:#1f2937; margin-bottom:12px">Spacing scale (4px base)</div>
+      <div style="display:flex; flex-direction:column; gap:8px; font:400 13px/1.5 inherit; color:#4b5563">
+        <div style="display:flex; gap:10px"><span class="num" style="font-weight:600; color:#2563eb; width:64px">24–28px</span> page / main content padding</div>
+        <div style="display:flex; gap:10px"><span class="num" style="font-weight:600; color:#2563eb; width:64px">16–22px</span> card inner padding</div>
+        <div style="display:flex; gap:10px"><span class="num" style="font-weight:600; color:#2563eb; width:64px">14px</span> gap between budget cards &amp; stacked blocks</div>
+        <div style="display:flex; gap:10px"><span class="num" style="font-weight:600; color:#2563eb; width:64px">10–12px</span> gap inside rows (icon ↔ label, chips)</div>
+        <div style="display:flex; gap:10px"><span class="num" style="font-weight:600; color:#2563eb; width:64px">8px</span> control radius · <span class="num" style="font-weight:600; color:#2563eb">12px</span> card radius · <span class="num" style="font-weight:600; color:#2563eb">999px</span> pills</div>
+      </div>
+    </div>
+    <div style="border-top:1px solid #f1f3f5; padding-top:20px">
+      <div style="font:600 13px/1 inherit; color:#1f2937; margin-bottom:12px">Responsive behavior</div>
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div style="display:flex; gap:12px; align-items:flex-start"><span style="font:600 11px/1 inherit; color:#2563eb; background:#eff6ff; padding:5px 9px; border-radius:6px; white-space:nowrap; flex:none">≥ 960px</span><div style="font:400 13px/1.5 inherit; color:#4b5563">Full layout. Sidebar expanded at <span class="num" style="font-weight:600">228px</span> (icon + label). Budget grid <strong>3 columns</strong>. Hero summary in one row.</div></div>
+        <div style="display:flex; gap:12px; align-items:flex-start"><span style="font:600 11px/1 inherit; color:#b45309; background:#fffaeb; padding:5px 9px; border-radius:6px; white-space:nowrap; flex:none">720–960</span><div style="font:400 13px/1.5 inherit; color:#4b5563">Sidebar collapses to a <span class="num" style="font-weight:600">60px</span> icon rail (labels hidden, active tint kept; tooltips on hover). Budget grid <strong>2 columns</strong>. Hero net stays large; income/spent move below it.</div></div>
+        <div style="display:flex; gap:12px; align-items:flex-start"><span style="font:600 11px/1 inherit; color:#6b7280; background:#f1f3f5; padding:5px 9px; border-radius:6px; white-space:nowrap; flex:none">&lt; 720px</span><div style="font:400 13px/1.5 inherit; color:#4b5563"><span class="num" style="font-weight:600">720px</span> is the minimum window. Below it, budget grid drops to <strong>1 column</strong> and the Quick-Add modal goes full-width (16px inset). No mobile/tablet layout in current scope.</div></div>
+      </div>
+    </div>
+    <div style="border-top:1px solid #f1f3f5; padding-top:20px">
+      <div style="font:600 13px/1 inherit; color:#1f2937; margin-bottom:12px">Confirmed decisions</div>
+      <div style="display:flex; flex-direction:column; gap:7px; font:400 13px/1.5 inherit; color:#4b5563">
+        <div>· Min window <span class="num" style="font-weight:600">720px</span>; no tablet layout.</div>
+        <div>· Alert banners are <strong>persistent</strong> until the budget situation resolves (not dismissible).</div>
+        <div>· Quick-Add success → <strong>toast slides in</strong>, modal auto-closes; newly added row appears optimistically.</div>
+        <div>· Currency <span class="num" style="font-weight:600">USD $</span>, tabular figures, right-aligned amounts.</div>
+        <div>· Motion 150–200ms; respects <span class="num" style="font-weight:600">prefers-reduced-motion</span>.</div>
+        <div>· Status never relies on color alone — paired with %, icon &amp; label.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+
+
+</body></html>

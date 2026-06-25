@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html><head><meta charset='utf-8'><style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .scr { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style></head>
+<body style='margin:0;background:#e9ebee;padding:24px'>
+<div style="position:absolute; left:1320px; top:3810px; width:1200px" class="scr" data-screen-label="Quick-Add · Expanded">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Quick-Add — “Add details” expanded · type = Transfer (destination revealed)</div>
+  <div style="position:relative; height:660px; background:#e9ebee; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <div style="position:absolute; inset:0; padding:28px 32px; opacity:.5">
+      <div style="height:26px; width:200px; background:#fff; border-radius:6px; margin-bottom:18px"></div>
+      <div style="height:120px; background:#fff; border-radius:12px; margin-bottom:16px"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px"><div style="height:120px; background:#fff; border-radius:12px"></div><div style="height:120px; background:#fff; border-radius:12px"></div><div style="height:120px; background:#fff; border-radius:12px"></div></div>
+    </div>
+    <div style="position:absolute; inset:0; background:rgba(15,17,22,.42); display:flex; align-items:flex-start; justify-content:center; padding-top:30px; overflow:auto">
+      <div style="width:440px; background:#fff; border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,.32); overflow:hidden">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px"><div style="font:600 15px/1 inherit; color:#1f2937">New transaction</div><span style="font:600 11px/1 inherit; color:#9ca3af; background:#f1f3f5; border:1px solid #e6e8ec; border-radius:6px; padding:4px 7px">Esc</span></div>
+        <div style="padding:4px 20px 8px; display:flex; flex-direction:column; gap:14px">
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Amount</div><div style="display:flex; align-items:center; height:48px; border:1px solid #d1d5db; border-radius:8px; padding:0 14px; background:#fff"><span class="num" style="font:600 22px/1 inherit; color:#9ca3af">$</span><span class="num" style="font:600 22px/1 inherit; color:#1f2937; margin-left:3px">500.00</span></div></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+            <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Category</div><div style="display:flex; align-items:center; gap:8px; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="width:10px; height:10px; border-radius:50%; background:#4DB6AC"></span><span style="font:400 14px/1 inherit; color:#1f2937">Savings</span></div></div>
+            <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Date</div><div style="display:flex; align-items:center; justify-content:space-between; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="font:400 14px/1 inherit; color:#1f2937">Jun 25</span><span style="color:#9ca3af">📅</span></div></div>
+          </div>
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Note</div><div style="display:flex; align-items:center; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff; font:400 14px/1 inherit; color:#1f2937">Monthly savings</div></div>
+          <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">Type</div><div style="display:inline-flex; background:#f1f3f5; border-radius:9px; padding:3px; gap:2px; width:100%"><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#6b7280; padding:8px 0; border-radius:7px">Expense</div><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#6b7280; padding:8px 0; border-radius:7px">Income</div><div style="flex:1; text-align:center; font:600 13px/1 inherit; color:#1f2937; background:#fff; padding:8px 0; border-radius:7px; box-shadow:0 1px 2px rgba(16,24,40,.1)">Transfer</div></div></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+            <div><div style="font:600 12px/1 inherit; color:#4b5563; margin-bottom:7px">From account</div><div style="display:flex; align-items:center; justify-content:space-between; height:42px; border:1px solid #d1d5db; border-radius:8px; padding:0 12px; background:#fff"><span style="font:400 14px/1 inherit; color:#1f2937">Checking</span><span style="color:#9ca3af; font-size:10px">▾</span></div></div>
+            <div><div style="font:600 12px/1 inherit; color:#2563eb; margin-bottom:7px">To account</div><div style="display:flex; align-items:center; justify-content:space-between; height:42px; border:1px solid #2563eb; border-radius:8px; padding:0 12px; background:#fff; box-shadow:0 0 0 3px rgba(37,99,235,.18)"><span style="font:400 14px/1 inherit; color:#1f2937">Savings</span><span style="color:#9ca3af; font-size:10px">▾</span></div></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding-top:2px"><div style="width:38px; height:22px; background:#2563eb; border-radius:999px; position:relative; flex:none"><div style="position:absolute; top:2px; right:2px; width:18px; height:18px; background:#fff; border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,.2)"></div></div><span style="font:500 13px/1 inherit; color:#1f2937">Details shown</span></div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:16px 20px; margin-top:8px; border-top:1px solid #f1f3f5">
+          <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:10px 15px; border-radius:8px; cursor:pointer">Cancel</button>
+          <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:8px">Add transfer <span style="opacity:.7">↵</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

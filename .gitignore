@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local preview server config (machine-specific paths)
+.claude/launch.json

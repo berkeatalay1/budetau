@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html><head><meta charset='utf-8'><style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .scr { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style></head>
+<body style='margin:0;background:#e9ebee;padding:24px'>
+<div style="position:absolute; left:1360px; top:150px; width:520px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Type scale — system stack</div>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); padding:24px 26px; border:1px solid #eef0f3">
+    <div style="display:flex; flex-direction:column; gap:18px">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid #f1f3f5"><div style="font:700 34px/1.1 inherit; color:#1f2937; letter-spacing:-0.02em">Display</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">34 / 700 / -2%</div></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid #f1f3f5"><div style="font:700 24px/1.2 inherit; color:#1f2937; letter-spacing:-0.01em">Heading 1</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">24 / 700</div></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid #f1f3f5"><div style="font:600 18px/1.3 inherit; color:#1f2937">Heading 2</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">18 / 600</div></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid #f1f3f5"><div style="font:400 14px/1.5 inherit; color:#1f2937">Body — the default reading size</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">14 / 400</div></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid #f1f3f5"><div style="font:500 12px/1.4 inherit; color:#6b7280">Caption · labels &amp; meta</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">12 / 500</div></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px"><div class="num" style="font:600 20px/1.2 inherit; color:#1f2937">$1,234.56</div><div class="num" style="font:500 11px/1 inherit; color:#9ca3af">amounts · tabular</div></div>
+    </div>
+  </div>
+</div>
+</body></html>

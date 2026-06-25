@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html><head><meta charset='utf-8'><style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .scr { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style></head>
+<body style='margin:0;background:#e9ebee;padding:24px'>
+<div style="position:absolute; left:0; top:4680px; width:1200px" class="scr" data-screen-label="Settings · Light">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Settings — Light</div>
+  <div style="position:relative; background:#fff; border-radius:12px; box-shadow:0 16px 48px rgba(16,24,40,.16); border:1px solid #e8eaee; overflow:hidden">
+    <div style="height:40px; background:#fff; border-bottom:1px solid #eef0f3; display:flex; align-items:center; padding:0 14px; gap:8px">
+      <div style="width:12px; height:12px; border-radius:50%; background:#ff5f57"></div><div style="width:12px; height:12px; border-radius:50%; background:#febc2e"></div><div style="width:12px; height:12px; border-radius:50%; background:#28c840"></div>
+      <div style="flex:1; text-align:center; font:500 12px/1 inherit; color:#9ca3af">Budetau — budget.db</div><div style="width:54px"></div>
+    </div>
+    <div style="display:flex; align-items:stretch">
+      <div style="width:228px; background:#fbfbfc; border-right:1px solid #eef0f3; padding:18px 14px; display:flex; flex-direction:column">
+        <div style="display:flex; align-items:center; gap:10px; padding:4px 8px 22px"><div style="width:28px; height:28px; border-radius:8px; background:#2563eb; position:relative; flex:none"><div style="position:absolute; left:8px; top:8px; width:12px; height:12px; border-radius:50%; border:2.5px solid #fff"></div></div><div style="font:700 16px/1 inherit; color:#1f2937; letter-spacing:-0.01em">Budetau</div></div>
+        <div style="display:flex; flex-direction:column; gap:3px">
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563"><div style="width:16px; height:16px; display:grid; grid-template-columns:1fr 1fr; gap:2px; flex:none"><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div><div style="background:#9ca3af; border-radius:1.5px"></div></div><span style="font:500 13px/1 inherit">Dashboard</span></div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; color:#4b5563"><div style="width:16px; height:16px; display:flex; flex-direction:column; justify-content:center; gap:3px; flex:none"><div style="height:2px; width:100%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:75%; background:#9ca3af; border-radius:2px"></div><div style="height:2px; width:90%; background:#9ca3af; border-radius:2px"></div></div><span style="font:500 13px/1 inherit">Transactions</span></div>
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; background:#eff6ff; color:#2563eb"><div style="width:16px; height:16px; border-radius:50%; border:2px solid #2563eb; position:relative; flex:none"><div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:5px; height:5px; border-radius:50%; background:#2563eb"></div></div><span style="font:600 13px/1 inherit">Settings</span></div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="border-top:1px solid #eef0f3; padding-top:14px; display:flex; align-items:center; gap:10px"><div style="width:30px; height:30px; border-radius:50%; background:#e0e7ff; color:#2563eb; font:600 12px/30px inherit; text-align:center; flex:none">P</div><div style="flex:1; min-width:0"><div style="font:600 12px/1.3 inherit; color:#1f2937">Personal</div><div style="font:400 11px/1.3 inherit; color:#9ca3af">Local file</div></div></div>
+      </div>
+      <div style="flex:1; background:#f9fafb; padding:24px 28px 30px; min-height:600px">
+        <div style="margin-bottom:20px"><div style="font:700 24px/1.1 inherit; color:#1f2937; letter-spacing:-0.01em">Settings</div></div>
+        <div style="max-width:640px; display:flex; flex-direction:column; gap:16px">
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:20px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px"><span style="font:600 15px/1 inherit; color:#1f2937">Database</span><span style="display:inline-flex; align-items:center; gap:5px; font:600 11px/1 inherit; color:#059669; background:#ecfdf3; padding:4px 8px; border-radius:999px"><span style="width:6px; height:6px; border-radius:50%; background:#059669"></span>On this Mac</span></div>
+            <div style="font:400 13px/1.5 inherit; color:#6b7280; margin-bottom:16px">All your data lives in one private file. No accounts, no servers — nothing leaves your device.</div>
+            <div style="display:flex; align-items:center; gap:12px; background:#f9fafb; border:1px solid #eef0f3; border-radius:9px; padding:12px 14px">
+              <div style="width:34px; height:34px; border-radius:8px; background:#eef2ff; display:flex; align-items:center; justify-content:center; flex:none"><div style="width:16px; height:13px; border:2px solid #2563eb; border-radius:3px"></div></div>
+              <div style="flex:1; min-width:0"><div style="font:500 12px/1.4 inherit; color:#9ca3af; margin-bottom:2px">File location</div><div class="num" style="font:500 13px/1.4 inherit; color:#1f2937; word-break:break-all">~/Library/Mobile Documents/iCloud~Budetau/budget.db</div></div>
+              <button style="font:600 12px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:8px 12px; border-radius:7px; cursor:pointer; white-space:nowrap; flex:none">Reveal in Finder</button>
+            </div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:20px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="font:600 15px/1 inherit; color:#1f2937; margin-bottom:4px">Appearance</div>
+            <div style="font:400 13px/1.5 inherit; color:#6b7280; margin-bottom:16px">Choose how Budetau looks. System follows your macOS setting.</div>
+            <div style="display:inline-flex; background:#f1f3f5; border-radius:10px; padding:3px; gap:2px">
+              <div style="font:600 13px/1 inherit; color:#1f2937; background:#fff; padding:9px 20px; border-radius:8px; box-shadow:0 1px 2px rgba(16,24,40,.1)">Light</div>
+              <div style="font:600 13px/1 inherit; color:#6b7280; padding:9px 20px; border-radius:8px">Dark</div>
+              <div style="font:600 13px/1 inherit; color:#6b7280; padding:9px 20px; border-radius:8px">System</div>
+            </div>
+          </div>
+          <div style="background:#fff; border:1px solid #eef0f3; border-radius:12px; padding:20px; box-shadow:0 1px 2px rgba(16,24,40,.04)">
+            <div style="font:600 15px/1 inherit; color:#1f2937; margin-bottom:4px">Backup &amp; restore</div>
+            <div style="font:400 13px/1.5 inherit; color:#6b7280; margin-bottom:16px">Export a timestamped copy of your database, or restore from a backup file.</div>
+            <div style="display:flex; gap:10px; margin-bottom:14px">
+              <button style="font:600 13px/1 inherit; color:#fff; background:#2563eb; border:none; padding:10px 16px; border-radius:8px; cursor:pointer">Export backup…</button>
+              <button style="font:600 13px/1 inherit; color:#1f2937; background:#fff; border:1px solid #d1d5db; padding:10px 16px; border-radius:8px; cursor:pointer">Restore from file…</button>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:10px; background:#fffaeb; border:1px solid #fde9c8; border-radius:9px; padding:11px 13px">
+              <div style="width:18px; height:18px; border-radius:50%; background:#d97706; color:#fff; font:700 11px/18px inherit; text-align:center; flex:none">!</div>
+              <div style="font:400 12px/1.5 inherit; color:#92400e">Restoring <strong style="font-weight:600">overwrites</strong> your current data. Budetau makes an automatic backup first.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

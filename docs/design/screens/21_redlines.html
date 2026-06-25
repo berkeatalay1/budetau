@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html><head><meta charset='utf-8'><style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .scr { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style></head>
+<body style='margin:0;background:#e9ebee;padding:24px'>
+<div style="position:absolute; left:820px; top:5560px; width:680px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Redlines — spacing &amp; responsive behavior</div>
+  <div style="background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(16,24,40,.08); padding:24px; border:1px solid #eef0f3; display:flex; flex-direction:column; gap:22px">
+    <div>
+      <div style="font:600 13px/1 inherit; color:#1f2937; margin-bottom:12px">Spacing scale (4px base)</div>
+      <div style="display:flex; flex-direction:column; gap:8px; font:400 13px/1.5 inherit; color:#4b5563">
+        <div style="display:flex; gap:10px"><span class="num" style="font-weight:600; color:#2563eb; width:64px">24–28px</span> page / main content padding</div>
+        <div style="display:flex; gap:10px"><span class="num" style="font-weight:600; color:#2563eb; width:64px">16–22px</span> card inner padding</div>
+        <div style="display:flex; gap:10px"><span class="num" style="font-weight:600; color:#2563eb; width:64px">14px</span> gap between budget cards &amp; stacked blocks</div>
+        <div style="display:flex; gap:10px"><span class="num" style="font-weight:600; color:#2563eb; width:64px">10–12px</span> gap inside rows (icon ↔ label, chips)</div>
+        <div style="display:flex; gap:10px"><span class="num" style="font-weight:600; color:#2563eb; width:64px">8px</span> control radius · <span class="num" style="font-weight:600; color:#2563eb">12px</span> card radius · <span class="num" style="font-weight:600; color:#2563eb">999px</span> pills</div>
+      </div>
+    </div>
+    <div style="border-top:1px solid #f1f3f5; padding-top:20px">
+      <div style="font:600 13px/1 inherit; color:#1f2937; margin-bottom:12px">Responsive behavior</div>
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div style="display:flex; gap:12px; align-items:flex-start"><span style="font:600 11px/1 inherit; color:#2563eb; background:#eff6ff; padding:5px 9px; border-radius:6px; white-space:nowrap; flex:none">≥ 960px</span><div style="font:400 13px/1.5 inherit; color:#4b5563">Full layout. Sidebar expanded at <span class="num" style="font-weight:600">228px</span> (icon + label). Budget grid <strong>3 columns</strong>. Hero summary in one row.</div></div>
+        <div style="display:flex; gap:12px; align-items:flex-start"><span style="font:600 11px/1 inherit; color:#b45309; background:#fffaeb; padding:5px 9px; border-radius:6px; white-space:nowrap; flex:none">720–960</span><div style="font:400 13px/1.5 inherit; color:#4b5563">Sidebar collapses to a <span class="num" style="font-weight:600">60px</span> icon rail (labels hidden, active tint kept; tooltips on hover). Budget grid <strong>2 columns</strong>. Hero net stays large; income/spent move below it.</div></div>
+        <div style="display:flex; gap:12px; align-items:flex-start"><span style="font:600 11px/1 inherit; color:#6b7280; background:#f1f3f5; padding:5px 9px; border-radius:6px; white-space:nowrap; flex:none">&lt; 720px</span><div style="font:400 13px/1.5 inherit; color:#4b5563"><span class="num" style="font-weight:600">720px</span> is the minimum window. Below it, budget grid drops to <strong>1 column</strong> and the Quick-Add modal goes full-width (16px inset). No mobile/tablet layout in current scope.</div></div>
+      </div>
+    </div>
+    <div style="border-top:1px solid #f1f3f5; padding-top:20px">
+      <div style="font:600 13px/1 inherit; color:#1f2937; margin-bottom:12px">Confirmed decisions</div>
+      <div style="display:flex; flex-direction:column; gap:7px; font:400 13px/1.5 inherit; color:#4b5563">
+        <div>· Min window <span class="num" style="font-weight:600">720px</span>; no tablet layout.</div>
+        <div>· Alert banners are <strong>persistent</strong> until the budget situation resolves (not dismissible).</div>
+        <div>· Quick-Add success → <strong>toast slides in</strong>, modal auto-closes; newly added row appears optimistically.</div>
+        <div>· Currency <span class="num" style="font-weight:600">USD $</span>, tabular figures, right-aligned amounts.</div>
+        <div>· Motion 150–200ms; respects <span class="num" style="font-weight:600">prefers-reduced-motion</span>.</div>
+        <div>· Status never relies on color alone — paired with %, icon &amp; label.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

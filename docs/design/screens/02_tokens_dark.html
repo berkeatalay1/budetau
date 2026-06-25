@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset='utf-8'><style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .scr { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style></head>
+<body style='margin:0;background:#e9ebee;padding:24px'>
+<div style="position:absolute; left:680px; top:150px; width:600px" class="scr">
+  <div data-drags-parent="1" style="font:600 13px/1.4 inherit; color:#6b7280; margin:0 0 10px 4px">Color tokens — Dark (proposed, not inverted)</div>
+  <div style="background:#171a21; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.4); padding:22px; border:1px solid #2a2f3a">
+    <div style="display:flex; flex-direction:column; gap:2px">
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; padding:0 6px 8px; font:600 11px/1 inherit; color:#6b7280; text-transform:uppercase; letter-spacing:.06em">
+        <div></div><div>Token · role</div><div>Hex</div>
+      </div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#e8eaed"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--primary</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Primary text, headings</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#e8eaed</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#9aa1ac"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--secondary</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Secondary text</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#9aa1ac</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#0e1116; border:1px solid #2a2f3a"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--bg</div><div style="font:400 12px/1.3 inherit; color:#6b7280">App background</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#0e1116</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#171a21; border:1px solid #2a2f3a"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--card</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Card surfaces</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#171a21</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#2a2f3a"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--border</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Dividers, card borders</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#2a2f3a</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#3b82f6"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--accent</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Primary actions, links, focus</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#3b82f6</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#34d399"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--green</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Income, under budget</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#34d399</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#f59e0b"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--amber</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Warning, near limit</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#f59e0b</div></div>
+      <div style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; padding:9px 6px; border-top:1px solid #23272f"><div style="height:30px; border-radius:8px; background:#f87171"></div><div><div style="font:600 13px/1.3 inherit; color:#e8eaed">--red</div><div style="font:400 12px/1.3 inherit; color:#6b7280">Over budget, destructive</div></div><div class="num" style="font:500 12px/1 inherit; color:#9aa1ac">#f87171</div></div>
+    </div>
+  </div>
+</div>
+</body></html>

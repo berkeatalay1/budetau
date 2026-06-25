@@ -1,41 +1,52 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
+import { useThemeStore } from './stores/theme'
+import { useQuickAddStore } from './stores/quickAdd'
+import WindowChrome from './components/WindowChrome.vue'
+import SidebarNav from './components/SidebarNav.vue'
+import AppFab from './components/AppFab.vue'
+import QuickAddModal from './components/QuickAddModal.vue'
+
+// Instantiate theme store so the watcher runs and `.dark` is applied on load.
+useThemeStore()
+
+const quickAdd = useQuickAddStore()
+
+// Global ⌘K / Ctrl+K shortcut
+function handleKeydown(e: KeyboardEvent): void {
+  if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault()
+    quickAdd.open()
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', handleKeydown))
+onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
+</script>
 
 <template>
-  <div class="flex h-screen bg-bg text-primary">
-    <!-- Sidebar -->
-    <aside class="flex w-60 flex-shrink-0 flex-col border-r border-border bg-card">
-      <div class="px-6 py-5">
-        <h1 class="text-lg font-semibold text-primary">Budetau</h1>
-        <p class="text-xs text-secondary">Budget Planner</p>
-      </div>
-      <nav class="flex flex-1 flex-col gap-1 px-3">
-        <router-link
-          to="/dashboard"
-          class="rounded-md px-3 py-2 text-sm font-medium text-secondary hover:bg-bg hover:text-primary"
-          active-class="bg-bg text-accent"
-        >
-          Dashboard
-        </router-link>
-        <router-link
-          to="/transactions"
-          class="rounded-md px-3 py-2 text-sm font-medium text-secondary hover:bg-bg hover:text-primary"
-          active-class="bg-bg text-accent"
-        >
-          Transactions
-        </router-link>
-        <router-link
-          to="/settings"
-          class="rounded-md px-3 py-2 text-sm font-medium text-secondary hover:bg-bg hover:text-primary"
-          active-class="bg-bg text-accent"
-        >
-          Settings
-        </router-link>
-      </nav>
-    </aside>
+  <!--
+    Full-screen app shell.
+    Position: relative so AppFab (position:absolute) anchors to this container.
+  -->
+  <div class="relative flex h-screen flex-col overflow-hidden bg-bg text-primary font-sans">
+    <!-- macOS-style title bar -->
+    <WindowChrome />
 
-    <!-- Main content -->
-    <main class="flex-1 overflow-y-auto p-8">
-      <router-view />
-    </main>
+    <!-- Body: sidebar + scrollable main -->
+    <div class="flex flex-1 overflow-hidden">
+      <SidebarNav />
+
+      <!-- Main scrollable area -->
+      <main class="flex-1 overflow-y-auto bg-bg">
+        <router-view />
+      </main>
+    </div>
+
+    <!-- Floating action button -->
+    <AppFab />
+
+    <!-- Quick-add modal — mounted once, opened via store -->
+    <QuickAddModal />
   </div>
 </template>
