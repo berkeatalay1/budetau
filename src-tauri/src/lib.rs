@@ -1,3 +1,16 @@
+use std::sync::Mutex;
+
+use rusqlite::Connection;
+use tauri::Manager;
+
+mod db;
+
+/// Tauri managed state holding the single SQLite connection.
+///
+/// Task 1D's CRUD commands access this via `tauri::State<'_, DbState>`
+/// and lock the inner `Mutex<Connection>` to run queries.
+pub struct DbState(pub Mutex<Connection>);
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -8,6 +21,15 @@ fn greet(name: &str) -> String {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            let path =
+                db::resolve_db_path(app.handle()).map_err(Box::<dyn std::error::Error>::from)?;
+            let conn = Connection::open(&path)?;
+            db::init(&conn)?;
+            db::seed_defaults(&conn)?;
+            app.manage(DbState(Mutex::new(conn)));
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
