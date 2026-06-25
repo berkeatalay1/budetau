@@ -251,19 +251,65 @@ fn insert_budget(conn: &Connection, new: &NewBudget) -> rusqlite::Result<Budget>
     fetch_budget(conn, conn.last_insert_rowid())
 }
 
+/// Apply (`dir = 1`) or reverse (`dir = -1`) a transaction's effect on
+/// account balance(s). Centralises the per-`type` rules so insert, update,
+/// and delete stay consistent. `amount` is a positive magnitude in cents;
+/// the sign comes from `type`.
+///
+/// * `expense`  — subtract from `account_id`.
+/// * `income`   — add to `account_id`.
+/// * `transfer` — subtract from `account_id`, add to `transfer_account_id`.
+fn adjust_balances(
+    tx: &rusqlite::Transaction<'_>,
+    ttype: &str,
+    amount: i64,
+    account_id: i64,
+    transfer_account_id: Option<i64>,
+    dir: i64,
+) -> rusqlite::Result<()> {
+    let amt = amount * dir;
+    match ttype {
+        "expense" => {
+            tx.execute(
+                "UPDATE accounts SET balance = balance - ?1 WHERE id = ?2;",
+                params![amt, account_id],
+            )?;
+        }
+        "income" => {
+            tx.execute(
+                "UPDATE accounts SET balance = balance + ?1 WHERE id = ?2;",
+                params![amt, account_id],
+            )?;
+        }
+        "transfer" => {
+            let dest = transfer_account_id.ok_or_else(|| {
+                rusqlite::Error::InvalidParameterName(
+                    "transfer transaction requires transfer_account_id".to_string(),
+                )
+            })?;
+            tx.execute(
+                "UPDATE accounts SET balance = balance - ?1 WHERE id = ?2;",
+                params![amt, account_id],
+            )?;
+            tx.execute(
+                "UPDATE accounts SET balance = balance + ?1 WHERE id = ?2;",
+                params![amt, dest],
+            )?;
+        }
+        other => {
+            return Err(rusqlite::Error::InvalidParameterName(format!(
+                "unknown transaction type: {other}"
+            )));
+        }
+    }
+    Ok(())
+}
+
 /// Insert a transaction and atomically adjust account balance(s).
 ///
-/// CRITICAL: the row insert and the balance update(s) happen inside one
-/// rusqlite transaction, committed together, so a balance can never drift
-/// out of sync with its transaction history. Balance effect by `type`:
-///
-/// * `expense`  — subtract `amount` from `account_id`.
-/// * `income`   — add `amount` to `account_id`.
-/// * `transfer` — subtract `amount` from `account_id` and add it to
-///   `transfer_account_id` (which must be set).
-///
-/// `amount` is always stored/passed as a positive magnitude in cents; the
-/// sign is derived from `type`.
+/// CRITICAL: the row insert and the balance update happen inside one rusqlite
+/// transaction, committed together, so a balance can never drift out of sync
+/// with its transaction history.
 fn insert_transaction(conn: &mut Connection, new: &NewTransaction) -> rusqlite::Result<Transaction> {
     let tx = conn.transaction()?;
 
@@ -283,44 +329,86 @@ fn insert_transaction(conn: &mut Connection, new: &NewTransaction) -> rusqlite::
     )?;
     let id = tx.last_insert_rowid();
 
-    match new.r#type.as_str() {
-        "expense" => {
-            tx.execute(
-                "UPDATE accounts SET balance = balance - ?1 WHERE id = ?2;",
-                params![new.amount, new.account_id],
-            )?;
-        }
-        "income" => {
-            tx.execute(
-                "UPDATE accounts SET balance = balance + ?1 WHERE id = ?2;",
-                params![new.amount, new.account_id],
-            )?;
-        }
-        "transfer" => {
-            let dest = new.transfer_account_id.ok_or_else(|| {
-                rusqlite::Error::InvalidParameterName(
-                    "transfer transaction requires transfer_account_id".to_string(),
-                )
-            })?;
-            tx.execute(
-                "UPDATE accounts SET balance = balance - ?1 WHERE id = ?2;",
-                params![new.amount, new.account_id],
-            )?;
-            tx.execute(
-                "UPDATE accounts SET balance = balance + ?1 WHERE id = ?2;",
-                params![new.amount, dest],
-            )?;
-        }
-        other => {
-            return Err(rusqlite::Error::InvalidParameterName(format!(
-                "unknown transaction type: {other}"
-            )));
-        }
-    }
+    adjust_balances(
+        &tx,
+        &new.r#type,
+        new.amount,
+        new.account_id,
+        new.transfer_account_id,
+        1,
+    )?;
 
     let created = fetch_transaction(&tx, id)?;
     tx.commit()?;
     Ok(created)
+}
+
+/// Update a transaction, atomically reversing its old balance effect and
+/// applying the new one in a single rusqlite transaction (so balances never
+/// drift, even when the amount, type, or accounts change).
+fn update_transaction_logic(
+    conn: &mut Connection,
+    t: &Transaction,
+) -> rusqlite::Result<Transaction> {
+    let tx = conn.transaction()?;
+
+    let old = fetch_transaction(&tx, t.id)?;
+    adjust_balances(
+        &tx,
+        &old.r#type,
+        old.amount,
+        old.account_id,
+        old.transfer_account_id,
+        -1,
+    )?;
+
+    tx.execute(
+        "UPDATE transactions SET \
+         account_id = ?1, amount = ?2, category_id = ?3, date = ?4, note = ?5, \
+         type = ?6, transfer_account_id = ?7 WHERE id = ?8;",
+        params![
+            t.account_id,
+            t.amount,
+            t.category_id,
+            t.date,
+            t.note,
+            t.r#type,
+            t.transfer_account_id,
+            t.id
+        ],
+    )?;
+
+    adjust_balances(
+        &tx,
+        &t.r#type,
+        t.amount,
+        t.account_id,
+        t.transfer_account_id,
+        1,
+    )?;
+
+    let updated = fetch_transaction(&tx, t.id)?;
+    tx.commit()?;
+    Ok(updated)
+}
+
+/// Delete a transaction, atomically reversing its balance effect first.
+fn delete_transaction_logic(conn: &mut Connection, id: i64) -> rusqlite::Result<()> {
+    let tx = conn.transaction()?;
+
+    let old = fetch_transaction(&tx, id)?;
+    adjust_balances(
+        &tx,
+        &old.r#type,
+        old.amount,
+        old.account_id,
+        old.transfer_account_id,
+        -1,
+    )?;
+    tx.execute("DELETE FROM transactions WHERE id = ?1;", params![id])?;
+
+    tx.commit()?;
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -392,6 +480,21 @@ pub fn create_transaction(
 ) -> Result<Transaction, String> {
     let mut conn = state.0.lock().map_err(|e| e.to_string())?;
     insert_transaction(&mut conn, &transaction).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn update_transaction(
+    state: tauri::State<'_, DbState>,
+    transaction: Transaction,
+) -> Result<Transaction, String> {
+    let mut conn = state.0.lock().map_err(|e| e.to_string())?;
+    update_transaction_logic(&mut conn, &transaction).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_transaction(state: tauri::State<'_, DbState>, id: i64) -> Result<(), String> {
+    let mut conn = state.0.lock().map_err(|e| e.to_string())?;
+    delete_transaction_logic(&mut conn, id).map_err(|e| e.to_string())
 }
 
 // ---------------------------------------------------------------------------
@@ -566,5 +669,104 @@ mod tests {
         .unwrap();
         assert_eq!(budget.amount, 12_000);
         assert_eq!(select_budgets(&conn).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn delete_reverses_balance_effect() {
+        let (mut conn, checking, _savings) = setup();
+        let t = insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: checking,
+                amount: 2_500,
+                category_id: None,
+                date: "2026-06-25".into(),
+                note: None,
+                r#type: "expense".into(),
+                transfer_account_id: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(balance_of(&conn, checking), 100_000 - 2_500);
+
+        delete_transaction_logic(&mut conn, t.id).unwrap();
+        // Balance restored and row gone.
+        assert_eq!(balance_of(&conn, checking), 100_000);
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM transactions;", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn update_amount_reapplies_balance_delta() {
+        let (mut conn, checking, _savings) = setup();
+        let mut t = insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: checking,
+                amount: 2_500,
+                category_id: None,
+                date: "2026-06-25".into(),
+                note: None,
+                r#type: "expense".into(),
+                transfer_account_id: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(balance_of(&conn, checking), 97_500);
+
+        // Bump the expense from $25 to $40: balance should drop a further $15.
+        t.amount = 4_000;
+        update_transaction_logic(&mut conn, &t).unwrap();
+        assert_eq!(balance_of(&conn, checking), 100_000 - 4_000);
+    }
+
+    #[test]
+    fn update_changing_type_expense_to_income_flips_sign() {
+        let (mut conn, checking, _savings) = setup();
+        let mut t = insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: checking,
+                amount: 5_000,
+                category_id: None,
+                date: "2026-06-25".into(),
+                note: None,
+                r#type: "expense".into(),
+                transfer_account_id: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(balance_of(&conn, checking), 95_000);
+
+        t.r#type = "income".into();
+        update_transaction_logic(&mut conn, &t).unwrap();
+        // Old -5_000 reversed (+5_000), new income +5_000 → net +5_000 from base.
+        assert_eq!(balance_of(&conn, checking), 105_000);
+    }
+
+    #[test]
+    fn delete_transfer_reverses_both_accounts() {
+        let (mut conn, checking, savings) = setup();
+        let t = insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: checking,
+                amount: 30_000,
+                category_id: None,
+                date: "2026-06-25".into(),
+                note: None,
+                r#type: "transfer".into(),
+                transfer_account_id: Some(savings),
+            },
+        )
+        .unwrap();
+        assert_eq!(balance_of(&conn, checking), 70_000);
+        assert_eq!(balance_of(&conn, savings), 80_000);
+
+        delete_transaction_logic(&mut conn, t.id).unwrap();
+        assert_eq!(balance_of(&conn, checking), 100_000);
+        assert_eq!(balance_of(&conn, savings), 50_000);
     }
 }

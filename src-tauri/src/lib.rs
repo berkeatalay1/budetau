@@ -42,6 +42,8 @@ pub fn run() {
             commands::create_category,
             commands::create_budget,
             commands::create_transaction,
+            commands::update_transaction,
+            commands::delete_transaction,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
