@@ -3,6 +3,7 @@ use std::sync::Mutex;
 use rusqlite::Connection;
 use tauri::Manager;
 
+mod commands;
 mod db;
 
 /// Tauri managed state holding the single SQLite connection.
@@ -30,7 +31,18 @@ pub fn run() {
             app.manage(DbState(Mutex::new(conn)));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            commands::get_db_path,
+            commands::list_accounts,
+            commands::list_categories,
+            commands::list_budgets,
+            commands::list_transactions,
+            commands::create_account,
+            commands::create_category,
+            commands::create_budget,
+            commands::create_transaction,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Budget } from '../types'
+import { listBudgets } from '../api'
 
 export const useBudgetStore = defineStore('budget', () => {
   const data = ref<Budget[]>([])
@@ -11,9 +12,7 @@ export const useBudgetStore = defineStore('budget', () => {
     isLoading.value = true
     error.value = null
     try {
-      // TODO (Task 1D): replace with Tauri invoke, e.g.
-      //   data.value = await invoke<Budget[]>('list_budgets')
-      data.value = []
+      data.value = await listBudgets()
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err)
     } finally {
