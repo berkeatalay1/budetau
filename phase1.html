@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Budget Planner - Phase 1 Build Plan</title>
+<style>
+    :root {
+        --primary-color: #1f2937;
+        --secondary-color: #4b5563;
+        --bg-color: #f9fafb;
+        --card-bg: #ffffff;
+        --border-color: #e5e7eb;
+        --accent-color: #2563eb;
+        --green: #059669;
+        --amber: #d97706;
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6; color: var(--primary-color); background-color: var(--bg-color);
+        margin: 0; padding: 40px 20px;
+    }
+    .container {
+        max-width: 900px; margin: 0 auto; background: var(--card-bg);
+        padding: 40px 50px; border-radius: 12px;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.025);
+    }
+    h1 { color: var(--primary-color); border-bottom: 3px solid var(--accent-color);
+        padding-bottom: 12px; margin-top: 0; font-size: 2.2em; }
+    h2 { color: var(--primary-color); margin-top: 40px; font-size: 1.5em; }
+    h3 { color: var(--accent-color); margin-top: 25px; font-size: 1.2em; }
+    p { color: var(--secondary-color); margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; margin: 25px 0; border-radius: 8px;
+        overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    th, td { border-bottom: 1px solid var(--border-color); padding: 14px 16px;
+        text-align: left; vertical-align: top; }
+    th { background-color: #f3f4f6; font-weight: 600; color: var(--primary-color); }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) { background-color: #f8fafc; }
+    ul, ol { color: var(--secondary-color); margin-bottom: 20px; padding-left: 24px; }
+    li { margin-bottom: 10px; }
+    code { background-color: #f1f5f9; padding: 2px 6px; border-radius: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.9em; color: #ef4444; }
+    .note { font-style: italic; color: #6b7280; font-size: 0.95em; background-color: #eff6ff;
+        padding: 12px 16px; border-left: 4px solid var(--accent-color); border-radius: 4px; margin: 20px 0; }
+    .warn { color: #7c2d12; background-color: #fef3c7; border-left: 4px solid var(--amber);
+        padding: 12px 16px; border-radius: 4px; margin: 20px 0; }
+    strong { color: var(--primary-color); }
+    .badge { display: inline-block; font-size: 0.75em; font-weight: 600; padding: 2px 10px;
+        border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+    .badge-block { background:#fee2e2; color:#b91c1c; }
+    .badge-parallel { background:#dcfce7; color:#15803d; }
+    .badge-final { background:#dbeafe; color:#1d4ed8; }
+    .new { color: var(--green); font-weight: 600; }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background:#f8fafc;
+        border:1px solid var(--border-color); border-radius: 8px; padding: 18px; margin: 20px 0; font-size: 0.95em; }
+    .step { background: var(--card-bg); border:1px solid var(--border-color); border-radius: 8px;
+        padding: 8px 14px; font-weight: 600; color: var(--primary-color); }
+    .arrow { color: var(--accent-color); font-weight: 700; }
+    .pair { display:flex; flex-direction:column; gap:6px; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Personal Budget Planner — Phase 1 Build Plan</h1>
+
+    <h2>Context</h2>
+    <p>The repository currently contains only the specification document (<code>budget_planner_architecture_v2.html</code>) and no code. This plan stands up <strong>Phase 1: Local Infrastructure</strong> for a local-first, privacy-focused budget planner — a Tauri desktop app with a Vue 3 + TypeScript frontend and an embedded SQLite database stored in a single, cloud-syncable file.</p>
+    <p>Before delegating to agents, the spec was pressure-tested and four issues were corrected. The decisions below (confirmed with the user) <strong>override the spec where they conflict</strong>.</p>
+
+    <table>
+      <thead><tr><th>#</th><th>Decision</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><strong>Target Tauri v2</strong></td><td>The spec's <code>tauri::api::path::document_dir</code> and <code>@tauri-apps/api/invoke</code> are Tauri v1 and will not compile against the v2 scaffold produced by <code>create tauri-app@latest</code>.</td></tr>
+        <tr><td>2</td><td><strong>Money as integer minor units</strong></td><td>Store cents in <code>INTEGER</code> columns, format in Vue. Floats lose precision — unacceptable for money.</td></tr>
+        <tr><td>3</td><td><strong>Add a <span class="new">Budget</span> entity</strong></td><td>The dashboard's limit banners ("95% of budget") and progress bars had no backing data model.</td></tr>
+        <tr><td>4</td><td><strong>Sequential → parallel → bridge</strong></td><td>One agent scaffolds (1A), two run in parallel (1B backend / 1C frontend), one wires the IPC bridge (1D).</td></tr>
+      </tbody>
+    </table>
+
+    <div class="warn"><strong>Prerequisite blocker:</strong> Node.js + npm and the Rust toolchain (cargo/rustc) are <strong>not installed</strong> on this machine. Homebrew and Xcode Command Line Tools are present. Node (via Homebrew) and Rust (via rustup) must be installed before any agent can build.</div>
+
+    <h2>Corrected Data Model</h2>
+    <div class="note">All money fields are <code>INTEGER</code> minor units (cents). Enable <code>PRAGMA foreign_keys = ON</code> and track schema version via <code>PRAGMA user_version</code>.</div>
+    <table>
+      <thead><tr><th>Entity</th><th>Fields</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>AppProfile</strong></td><td>id, profile_name, created_at, db_sync_path</td><td>Local profiles.</td></tr>
+        <tr><td><strong>Account</strong></td><td>id, profile_id, name, balance <em>(INTEGER cents)</em>, currency, type</td><td>Balance is maintained atomically, not a float.</td></tr>
+        <tr><td><strong>Category</strong></td><td>id, profile_id, name, color_code, type</td><td>Flat tag structure.</td></tr>
+        <tr><td><strong><span class="new">Budget</span></strong></td><td>id, profile_id, category_id, period <em>(e.g. 'monthly')</em>, amount <em>(INTEGER cents)</em></td><td><span class="new">NEW</span> — powers limit banners &amp; progress bars.</td></tr>
+        <tr><td><strong>Transaction</strong></td><td>id, account_id, amount <em>(INTEGER cents)</em>, category_id, date, note, type, <span class="new">transfer_account_id</span> <em>(nullable)</em></td><td><span class="new">transfer_account_id</span> added so <code>type='transfer'</code> can express from → to.</td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li>Rust structs use <code>#[serde(rename_all = "camelCase")]</code> so the frontend receives camelCase without manual mapping.</li>
+      <li>On connection init: <code>PRAGMA journal_mode = DELETE;</code> (avoids <code>-wal</code>/<code>-shm</code> files fighting cloud sync), <code>PRAGMA foreign_keys = ON;</code>, and a <code>user_version</code>-gated migration runner.</li>
+    </ul>
+
+    <h2>Tauri v2 API Corrections (apply throughout)</h2>
+    <ul>
+      <li><strong>Path resolution:</strong> <code>app.path().document_dir()</code> via <code>tauri::Manager</code> — <em>not</em> <code>tauri::api::path::document_dir</code>.</li>
+      <li><strong>Frontend invoke:</strong> <code>import { invoke } from '@tauri-apps/api/core'</code> — <em>not</em> <code>@tauri-apps/api</code>.</li>
+      <li><strong>Capabilities:</strong> declare permissions in <code>src-tauri/capabilities/*.json</code> for any FS access.</li>
+      <li><strong>SQLite:</strong> <code>rusqlite</code> (feature <code>bundled</code>) compiled into the Rust backend, exposed via <code>#[tauri::command]</code>s (not the JS sql plugin).</li>
+    </ul>
+
+    <h2>Execution Plan (Agent Delegation)</h2>
+    <div class="flow">
+      <span class="step">1A&nbsp;Scaffold</span>
+      <span class="arrow">→</span>
+      <span class="pair"><span class="step">1B&nbsp;Backend</span><span class="step">1C&nbsp;Frontend</span></span>
+      <span class="arrow">→</span>
+      <span class="step">1D&nbsp;IPC&nbsp;Bridge</span>
+    </div>
+
+    <h3>Task 1A — Scaffold <span class="badge badge-block">BLOCKS ALL</span></h3>
+    <ul>
+      <li><code>npm create tauri-app@latest</code> → Vue + TypeScript + Vite, Tauri <strong>v2</strong>.</li>
+      <li>Strict <code>tsconfig.json</code>; ESLint + Prettier; <code>clippy</code> + <code>rustfmt</code>.</li>
+      <li><code>src-tauri/Cargo.toml</code>: <code>tauri</code> v2, <code>serde</code>, <code>serde_json</code>.</li>
+      <li>Verify <code>npm run tauri dev</code> builds and runs. <strong>Commit before parallel work begins.</strong></li>
+    </ul>
+
+    <h3>Task 1B — SQLite Backend <span class="badge badge-parallel">PARALLEL w/ 1C</span></h3>
+    <p>Directory: <code>src-tauri/</code></p>
+    <ul>
+      <li>Add <code>rusqlite</code> (bundled) + <code>serde_rusqlite</code>.</li>
+      <li>Path resolver: <code>document_dir()</code> first, fallback to app-data dir.</li>
+      <li><code>db::init()</code>: the PRAGMAs above + <code>CREATE TABLE IF NOT EXISTS</code> for all 5 entities incl. <strong>Budget</strong>; seed default categories on first run.</li>
+      <li>Thread-safe <code>Mutex&lt;Connection&gt;</code> in Tauri managed state.</li>
+      <li>Rust unit tests for <code>db::init()</code> and path resolution.</li>
+    </ul>
+
+    <h3>Task 1C — Frontend Foundation <span class="badge badge-parallel">PARALLEL w/ 1B</span></h3>
+    <p>Directory: <code>src/</code></p>
+    <ul>
+      <li>Clean boilerplate; dirs <code>components/ views/ stores/ types/</code>.</li>
+      <li>Pinia: <code>useTransactionStore</code>, <code>useAccountStore</code>, <code>useBudgetStore</code> (<code>data</code>/<code>isLoading</code>/<code>error</code>).</li>
+      <li>Vue Router: <code>/dashboard</code> (default), <code>/transactions</code>, <code>/settings</code>.</li>
+      <li>Tailwind via PostCSS, custom palette from the spec.</li>
+      <li>Responsive <code>App.vue</code> shell: fixed sidebar + scrollable main.</li>
+    </ul>
+
+    <h3>Task 1D — IPC Bridge <span class="badge badge-final">NEEDS 1B + 1C</span></h3>
+    <ul>
+      <li><code>#[tauri::command]</code> CRUD returning <code>Result&lt;T, String&gt;</code>; <strong>atomic balance update inside the same DB transaction</strong> as the transaction insert (pulled forward from Phase 2 to prevent balance drift).</li>
+      <li><code>src/types/index.ts</code> interfaces mirroring Rust structs (camelCase via serde rename).</li>
+      <li><code>src/api.ts</code> wrapping <code>invoke</code> with typed async functions (e.g. <code>fetchAccounts(): Promise&lt;Account[]&gt;</code>).</li>
+      <li>Wire Pinia stores → <code>api.ts</code> actions.</li>
+      <li>Settings view invokes <code>get_db_path</code> to display the active SQLite file location.</li>
+    </ul>
+
+    <h2>Out of Scope (Later Phases)</h2>
+    <ul>
+      <li>Dashboard hero / banners / cards rendering — Phase 1 builds the data + shell only.</li>
+      <li>CSV bank-statement import (Phase 3).</li>
+      <li>Charts / historical cash-flow trends (Phase 3).</li>
+    </ul>
+
+    <h2>Verification</h2>
+    <ul>
+      <li><strong>After 1A:</strong> <code>npm run tauri dev</code> opens a window; <code>cargo clippy</code> and ESLint pass clean.</li>
+      <li><strong>After 1B:</strong> <code>cargo test</code> passes; launching the app creates the SQLite file in the document dir with all 5 tables and no <code>-wal</code>/<code>-shm</code> files; <code>user_version</code> set.</li>
+      <li><strong>After 1C:</strong> <code>npm run dev</code> renders the sidebar shell; routes navigate; Pinia devtools show the three stores.</li>
+      <li><strong>After 1D (end-to-end):</strong> Settings view displays the DB path; adding a transaction updates the account balance atomically and the Pinia store reactively reflects it; round-trip a record (insert → fetch → assert) confirms snake_case ↔ camelCase mapping.</li>
+      <li><strong>Final gate:</strong> <code>cargo test</code> + <code>cargo clippy</code> clean, frontend typechecks (<code>vue-tsc --noEmit</code>), app boots and persists data across restarts.</li>
+    </ul>
+</div>
+</body>
+</html>
