@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Budget Planner - Architecture & UI Specification</title>
+<style>
+    :root {
+        --primary-color: #1f2937;
+        --secondary-color: #4b5563;
+        --bg-color: #f9fafb;
+        --card-bg: #ffffff;
+        --border-color: #e5e7eb;
+        --accent-color: #2563eb;
+    }
+    
+    * {
+        box-sizing: border-box;
+    }
+
+    body { 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+        line-height: 1.6; 
+        color: var(--primary-color); 
+        background-color: var(--bg-color); 
+        margin: 0; 
+        padding: 40px 20px; 
+    }
+    
+    .container { 
+        max-width: 900px; 
+        margin: 0 auto; 
+        background: var(--card-bg); 
+        padding: 40px 50px; 
+        border-radius: 12px; 
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.025); 
+    }
+    
+    h1 { 
+        color: var(--primary-color); 
+        border-bottom: 3px solid var(--accent-color); 
+        padding-bottom: 12px; 
+        margin-top: 0;
+        font-size: 2.2em;
+    }
+    
+    h2 { 
+        color: var(--primary-color); 
+        margin-top: 40px; 
+        font-size: 1.5em;
+    }
+    
+    h3 { 
+        color: var(--accent-color); 
+        margin-top: 25px;
+        font-size: 1.2em;
+    }
+    
+    p {
+        color: var(--secondary-color);
+        margin-bottom: 16px;
+    }
+    
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin: 25px 0; 
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    th, td { 
+        border-bottom: 1px solid var(--border-color); 
+        padding: 14px 16px; 
+        text-align: left; 
+    }
+    
+    th { 
+        background-color: #f3f4f6; 
+        font-weight: 600; 
+        color: var(--primary-color); 
+    }
+    
+    tr:last-child td {
+        border-bottom: none;
+    }
+    
+    tr:nth-child(even) { 
+        background-color: #f8fafc; 
+    }
+    
+    ul, ol { 
+        color: var(--secondary-color);
+        margin-bottom: 20px; 
+        padding-left: 24px;
+    }
+    
+    li { 
+        margin-bottom: 10px; 
+    }
+    
+    code {
+        background-color: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.9em;
+        color: #ef4444;
+    }
+    
+    .note { 
+        font-style: italic; 
+        color: #6b7280; 
+        font-size: 0.95em; 
+        background-color: #eff6ff;
+        padding: 12px 16px;
+        border-left: 4px solid var(--accent-color);
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+    
+    strong {
+        color: var(--primary-color);
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Personal Budget Planner - Architecture & UI Specification</h1>
+    <p>This document outlines the core architecture, data models, and implementation phases for the local-first personal budget planner application. The architecture prioritizes privacy and offline availability using Tauri and SQLite.</p>
+
+    <h2>Technology Stack (Local-First Pivot)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Technology</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Application Shell</strong></td>
+          <td>Tauri</td>
+          <td>Packages the web frontend into a lightweight, native desktop executable.</td>
+        </tr>
+        <tr>
+          <td><strong>Frontend</strong></td>
+          <td>Vue 3, TypeScript</td>
+          <td>Provides a reactive user interface and client-side data formatting.</td>
+        </tr>
+        <tr>
+          <td><strong>Backend Logic</strong></td>
+          <td>Rust</td>
+          <td>Handles local file system operations, database connections, and system-level APIs.</td>
+        </tr>
+        <tr>
+          <td><strong>Database</strong></td>
+          <td>SQLite</td>
+          <td>A serverless, single-file database optimized for local storage and cloud-folder syncing.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Data Models & Categorization</h2>
+    <div class="note">Note: Based on UX priorities, categorization will use a <strong>Flat Tag Structure</strong>. Instead of complex relational nesting, categories will exist in a single level, allowing for rapid autocomplete selection.</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Entity</th>
+          <th>Fields</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>AppProfile</strong></td>
+          <td>id, profile_name, created_at, db_sync_path</td>
+          <td>Local user profiles (e.g., "Personal", "Business").</td>
+        </tr>
+        <tr>
+          <td><strong>Account</strong></td>
+          <td>id, profile_id, name, balance, currency, type</td>
+          <td>Bank accounts, credit cards, or cash wallets.</td>
+        </tr>
+        <tr>
+          <td><strong>Transaction</strong></td>
+          <td>id, account_id, amount, category_id, date, note, type</td>
+          <td>Income, expense, or transfer records.</td>
+        </tr>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>id, profile_id, name, color_code, type</td>
+          <td>Flat budget categories (e.g., "Dining Out", "Rent").</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>UI Architecture & Frontend Goals</h2>
+    
+    <h3>Dashboard Layout</h3>
+    <ul>
+        <li><strong>Hero Section:</strong> High-level summary displaying Total Spend vs. Total Income for the current month.</li>
+        <li><strong>Attention Banners:</strong> Conditional alert components that trigger when specific categories are near or over their limits (e.g., "Warning: Dining Out is at 95% of budget").</li>
+        <li><strong>Budget Cards:</strong> A responsive grid of cards for each active category, displaying visual progress bars (spent vs. remaining).</li>
+    </ul>
+
+    <h3>Transaction Entry (Rapid Modal)</h3>
+    <ul>
+        <li><strong>Trigger:</strong> Accessible via a floating action button (FAB) or a global keyboard shortcut (e.g., <code>Cmd+K</code>).</li>
+        <li><strong>Default View:</strong> Streamlined to just three inputs: Amount, Category (with autocomplete), and Date (defaults to today).</li>
+        <li><strong>Expansion:</strong> An "Add Details" toggle to reveal optional fields like Notes or specific Account selectors.</li>
+    </ul>
+
+    <h3>Data Display Density</h3>
+    <ul>
+        <li><strong>Card-Based UI:</strong> Standard transactions will be displayed using a <code>TransactionCard.vue</code> component showing the Category icon/color, Amount, and Date, rather than dense spreadsheet grids, ensuring a clean and modern aesthetic.</li>
+    </ul>
+
+    <h2>Phase 1: Local Infrastructure Setup (Agent Delegation Plan)</h2>
+    <p>Phase 1 has been heavily detailed and divided into modular sub-tasks designed to be delegated to AI agents or developers. Strict dependencies must be followed to avoid blocking.</p>
+
+    <h3>Task 1A: Core Project Scaffolding</h3>
+    <ul>
+      <li><strong>Status:</strong> PREREQUISITE FOR ALL OTHER TASKS.</li>
+      <li><strong>Instructions for Agent:</strong>
+        <ol>
+          <li>Initialize the Tauri workspace using the <code>npm create tauri-app@latest</code> utility. Select <strong>Vue</strong>, <strong>TypeScript</strong>, and <strong>Vite</strong>.</li>
+          <li>Configure <code>tsconfig.json</code> with strict type checking enabled to ensure robust component development.</li>
+          <li>Set up ESLint and Prettier for the Vue frontend to maintain standardized formatting.</li>
+          <li>Configure <code>src-tauri/Cargo.toml</code> with <code>serde</code>, <code>serde_json</code>, and <code>tauri</code> core dependencies. Add <code>clippy</code> and <code>rustfmt</code> to the environment requirements.</li>
+          <li>Verify the application builds successfully and runs the dev server via <code>npm run tauri dev</code>.</li>
+        </ol>
+      </li>
+    </ul>
+
+    <h3>Task 1B: SQLite Backend & Path Resolution</h3>
+    <ul>
+      <li><strong>Dependencies:</strong> Requires Task 1A.</li>
+      <li><strong>Execution Status:</strong> Can run in <strong>PARALLEL</strong> with Task 1C.</li>
+      <li><strong>Instructions for Agent:</strong>
+        <ol>
+          <li>Add the <code>rusqlite</code> (with the <code>bundled</code> feature) and <code>serde_rusqlite</code> crates to the Tauri backend.</li>
+          <li>Implement a Rust module using <code>tauri::api::path::document_dir</code> to dynamically resolve the database storage path. The fallback should be a local app data folder if a cloud-sync folder (like iCloud) is unavailable.</li>
+          <li>Write a <code>db::init()</code> function to execute the <code>CREATE TABLE IF NOT EXISTS</code> strings for <code>AppProfile</code>, <code>Account</code>, <code>Transaction</code>, and <code>Category</code>.</li>
+          <li><strong>Crucial:</strong> Explicitly execute <code>PRAGMA journal_mode = DELETE;</code> or <code>TRUNCATE;</code> upon connection initialization to disable <code>WAL</code> (Write-Ahead Logging). This prevents the creation of <code>-wal</code> and <code>-shm</code> files that severely conflict with cloud sync engines.</li>
+          <li>Implement a thread-safe SQLite connection manager using <code>std::sync::Mutex</code> wrapped in Tauri's managed state so commands can safely access the database.</li>
+        </ol>
+      </li>
+    </ul>
+
+    <h3>Task 1C: Frontend Foundation & State Management</h3>
+    <ul>
+      <li><strong>Dependencies:</strong> Requires Task 1A.</li>
+      <li><strong>Execution Status:</strong> Can run in <strong>PARALLEL</strong> with Task 1B.</li>
+      <li><strong>Instructions for Agent:</strong>
+        <ol>
+          <li>Clean out the boilerplate Vite/Vue code. Set up standard directories: <code>src/components</code>, <code>src/views</code>, <code>src/stores</code>, <code>src/types</code>.</li>
+          <li>Install and configure <strong>Pinia</strong>. Create <code>useTransactionStore</code> and <code>useAccountStore</code> with structured state representations (e.g., <code>data</code>, <code>isLoading</code>, <code>error</code>).</li>
+          <li>Install and configure <strong>Vue Router</strong>. Define the base paths: <code>/dashboard</code> (default routing), <code>/transactions</code>, and <code>/settings</code>.</li>
+          <li>Install <strong>Tailwind CSS</strong> via PostCSS. Configure <code>tailwind.config.js</code> to scan Vue components and set up a custom color palette matching the UI architecture specification.</li>
+          <li>Build a persistent responsive layout (<code>App.vue</code>) with a fixed navigation sidebar and a main scrollable content area.</li>
+        </ol>
+      </li>
+    </ul>
+
+    <h3>Task 1D: The IPC (Inter-Process Communication) Bridge</h3>
+    <ul>
+      <li><strong>Dependencies:</strong> Requires BOTH Task 1B and Task 1C to be completed.</li>
+      <li><strong>Instructions for Agent:</strong>
+        <ol>
+          <li>In the Rust backend, define Tauri commands with the <code>#[tauri::command]</code> macro for standard CRUD operations. Ensure these functions return <code>Result&lt;T, String&gt;</code> to smoothly map Rust errors to frontend rejections.</li>
+          <li>In <code>src/types/index.ts</code>, define frontend TypeScript interfaces that strictly map to the Rust struct properties (handling camelCase to snake_case conversions where necessary).</li>
+          <li>Create a frontend <code>api.ts</code> utility file wrapping <code>@tauri-apps/api/invoke</code>. Provide strongly-typed async functions (e.g., <code>export const fetchAccounts = (): Promise&lt;Account[]&gt; =&gt; invoke('get_accounts')</code>).</li>
+          <li>Wire the Pinia stores to these <code>api.ts</code> actions so the UI reactively updates state when transactions are added or account balances change.</li>
+          <li>Implement the "Settings" view to invoke a <code>get_db_path</code> Rust command, displaying the active SQLite file location so the user can verify their local-first sync setup.</li>
+        </ol>
+      </li>
+    </ul>
+
+    <h2>Implementation Phases (Upcoming)</h2>
+
+    <h3>Phase 2: Enhanced Business Logic</h3>
+    <ul>
+      <li>Implement strict transaction processing constraints (updating Account balances atomically).</li>
+      <li>Add alerting thresholds to backend aggregation commands.</li>
+    </ul>
+
+    <h3>Phase 3: Automated Ingestion & Analytics</h3>
+    <ul>
+      <li><strong>Data Ingestion V2:</strong> Implement a Rust-based CSV parser to handle bulk bank statement imports securely on the local machine.</li>
+      <li>Integrate frontend charting for historical cash flow trends.</li>
+    </ul>
+</div>
+</body>
+</html>
