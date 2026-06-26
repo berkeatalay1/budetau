@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Personal Budget Planner - Feature List & Roadmap</title>
+<title>Budetau - Feature List & Roadmap</title>
 <style>
     :root {
         --primary-color: #1f2937;
@@ -32,199 +32,145 @@
         border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
     h3 { color: var(--accent-color); margin-top: 25px; font-size: 1.2em; }
     p { color: var(--secondary-color); margin-bottom: 16px; }
-    table { width: 100%; border-collapse: collapse; margin: 25px 0; border-radius: 8px;
+    table { width: 100%; border-collapse: collapse; margin: 22px 0; border-radius: 8px;
         overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    th, td { border-bottom: 1px solid var(--border-color); padding: 14px 16px;
+    th, td { border-bottom: 1px solid var(--border-color); padding: 12px 16px;
         text-align: left; vertical-align: top; }
     th { background-color: #f3f4f6; font-weight: 600; color: var(--primary-color); }
     tr:last-child td { border-bottom: none; }
     tr:nth-child(even) { background-color: #f8fafc; }
     ul, ol { color: var(--secondary-color); margin-bottom: 20px; padding-left: 24px; }
-    li { margin-bottom: 10px; }
+    li { margin-bottom: 8px; }
     code { background-color: #f1f5f9; padding: 2px 6px; border-radius: 4px;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         font-size: 0.9em; color: #ef4444; }
     .note { font-style: italic; color: #6b7280; font-size: 0.95em; background-color: #eff6ff;
         padding: 12px 16px; border-left: 4px solid var(--accent-color); border-radius: 4px; margin: 20px 0; }
-    .warn { color: #7c2d12; background-color: #fef3c7; border-left: 4px solid var(--amber);
-        padding: 12px 16px; border-radius: 4px; margin: 20px 0; }
     strong { color: var(--primary-color); }
-    .badge { display: inline-block; font-size: 0.75em; font-weight: 600; padding: 2px 10px;
-        border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+    .badge { display: inline-block; font-size: 0.72em; font-weight: 700; padding: 2px 9px;
+        border-radius: 999px; margin-left: 8px; vertical-align: middle; letter-spacing: .02em; }
     .badge-done { background:#dcfce7; color:#15803d; }
+    .badge-progress { background:#fef3c7; color:#b45309; }
     .badge-planned { background:#dbeafe; color:#1d4ed8; }
+    .badge-qol { background:#f3e8ff; color:#7e22ce; }
     .badge-deferred { background:#f3f4f6; color:#6b7280; }
-    .new { color: var(--green); font-weight: 600; }
-    .feature { border:1px solid var(--border-color); border-radius: 10px; padding: 4px 20px 8px;
-        margin: 18px 0; background:#ffffff; }
-    .feature h3 { margin-top: 16px; }
-    .meta { font-size: 0.85em; color: #6b7280; margin: 6px 0 0; }
-    .meta code { font-size: 0.85em; }
-    .legend { display:flex; flex-wrap:wrap; gap:14px; align-items:center; background:#f8fafc;
+    .legend { display:flex; flex-wrap:wrap; gap:12px 18px; align-items:center; background:#f8fafc;
         border:1px solid var(--border-color); border-radius: 8px; padding: 14px 18px; margin: 20px 0; font-size: 0.9em; }
     .check { color: var(--green); font-weight: 700; }
+    .tag { display:inline-block; font-size:.72em; font-weight:700; padding:1px 7px; border-radius:5px;
+        background:#eef2ff; color:#4f46e5; margin-right:6px; vertical-align:middle; }
 </style>
 </head>
 <body>
 <div class="container">
-    <h1>Personal Budget Planner — Feature List &amp; Roadmap</h1>
-    <p>A complete, status-tagged catalogue of features for the local-first budget planner (Tauri v2 + Vue 3 + SQLite). Phase 1 (Local Infrastructure) is delivered; Phases 2 and 3 plus two cross-cutting tracks are planned. Items the team chose not to pursue yet are recorded in the <strong>Deferred Backlog</strong> so nothing is lost.</p>
+    <h1>Budetau — Feature List &amp; Roadmap</h1>
+    <p>Living catalogue for the local-first budget planner (Tauri v2 + Vue 3 + SQLite). Organised into three buckets: <strong>what's added</strong>, <strong>what we want for sure</strong>, and <strong>quality-of-life</strong> nice-to-haves. A short "not now" list keeps explicitly-parked ideas from getting lost.</p>
 
     <div class="legend">
-        <span><span class="badge badge-done">DONE</span> shipped &amp; verified</span>
-        <span><span class="badge badge-planned">PLANNED</span> on the roadmap</span>
-        <span><span class="badge badge-deferred">DEFERRED</span> backlog, not scheduled</span>
+        <span><span class="badge badge-done">SHIPPED</span> built &amp; verified</span>
+        <span><span class="badge badge-progress">IN&nbsp;PROGRESS</span> being built now</span>
+        <span><span class="badge badge-planned">PLANNED</span> committed, want for sure</span>
+        <span><span class="badge badge-qol">QoL</span> nice-to-have</span>
+        <span><span class="badge badge-deferred">NOT&nbsp;NOW</span> parked</span>
     </div>
 
-    <!-- ====================== PHASE 1 ====================== -->
-    <h2>Phase 1 — Local Infrastructure <span class="badge badge-done">DONE</span></h2>
-    <p>The foundation: a building, testable desktop app with a privacy-first local database and a typed bridge between Rust and Vue. All work is verified (11 Rust tests, clippy + ESLint clean, frontend type-checks).</p>
+    <!-- ============================================================= -->
+    <h2>1 · What's added <span class="badge badge-done">SHIPPED</span></h2>
+    <p>Everything below builds, is wired to the real SQLite database, and is covered by tests (20 Rust unit tests) and a visual pass.</p>
+
+    <h3>Foundation</h3>
     <table>
-      <thead><tr><th>Feature</th><th>What it delivers</th></tr></thead>
+      <thead><tr><th>Feature</th><th>Detail</th></tr></thead>
       <tbody>
-        <tr><td><strong>Desktop shell</strong> <span class="check">✓</span></td><td>Tauri v2 + Vue 3 + TypeScript + Vite. Strict tsconfig, ESLint (flat) + Prettier, clippy + rustfmt.</td></tr>
-        <tr><td><strong>SQLite schema</strong> <span class="check">✓</span></td><td>5 tables (<code>app_profiles</code>, <code>accounts</code>, <code>categories</code>, <code>budgets</code>, <code>transactions</code>); money as <code>INTEGER</code> cents; <code>user_version</code>-gated migrations.</td></tr>
-        <tr><td><strong>Cloud-sync safety</strong> <span class="check">✓</span></td><td><code>PRAGMA journal_mode = DELETE</code> disables WAL so no <code>-wal</code>/<code>-shm</code> sidecar files corrupt under iCloud/Dropbox. Path resolves to Documents, falls back to app-data.</td></tr>
-        <tr><td><strong>Atomic balances</strong> <span class="check">✓</span></td><td>Inserting a transaction updates account balance(s) inside one DB transaction — expense/income/transfer, with rollback on invalid transfer. Balances can never drift.</td></tr>
-        <tr><td><strong>Typed IPC bridge</strong> <span class="check">✓</span></td><td>9 <code>#[tauri::command]</code>s returning <code>Result&lt;T, String&gt;</code>; <code>api.ts</code> typed wrappers via <code>@tauri-apps/api/core</code>; serde camelCase mapping.</td></tr>
-        <tr><td><strong>Frontend foundation</strong> <span class="check">✓</span></td><td>Pinia stores (account/transaction/budget), Vue Router (dashboard/transactions/settings), Tailwind palette, responsive sidebar shell. Settings shows the live DB path.</td></tr>
+        <tr><td><strong>Local-first core</strong> <span class="check">✓</span></td><td>Tauri v2 + Vue 3 + TS, single cloud-syncable SQLite file, WAL disabled (no <code>-wal</code>/<code>-shm</code> sync conflicts).</td></tr>
+        <tr><td><strong>Schema &amp; migrations</strong> <span class="check">✓</span></td><td>5 tables, <code>user_version</code> migrations (now at v2), money as <code>INTEGER</code> cents, FKs on.</td></tr>
+        <tr><td><strong>Atomic balances</strong> <span class="check">✓</span></td><td>Insert/update/delete adjust account balance(s) in one DB transaction; transfer-safe; never drifts.</td></tr>
+        <tr><td><strong>Typed IPC bridge</strong> <span class="check">✓</span></td><td>13 Rust commands ↔ typed <code>api.ts</code>, camelCase via serde; Pinia stores with mutation actions.</td></tr>
       </tbody>
     </table>
 
-    <!-- ====================== PHASE 2 ====================== -->
-    <h2>Phase 2 — Budgeting &amp; Core UX <span class="badge badge-planned">PLANNED</span></h2>
-    <p>Turns the data layer into the product. This is where the app becomes usable day-to-day: a live dashboard, fast entry, full transaction management, and the budget alerts that are the spec's headline.</p>
-
-    <div class="feature">
-      <h3>1. Dashboard Rendering</h3>
-      <ul>
-        <li><strong>Hero summary:</strong> Total Spend vs Total Income for the current month, with net delta.</li>
-        <li><strong>Budget cards:</strong> responsive grid, one card per active category, each with a spent-vs-remaining progress bar and the category color.</li>
-        <li><strong>Empty &amp; loading states</strong> for first-run users with no data yet.</li>
-      </ul>
-      <p class="meta"><strong>Backend:</strong> new aggregation commands <code>get_month_summary</code> and <code>get_budget_progress</code> (SUM over <code>transactions</code> grouped by category, joined to <code>budgets</code>). <strong>Frontend:</strong> <code>DashboardView.vue</code> + <code>BudgetCard.vue</code>.</p>
-    </div>
-
-    <div class="feature">
-      <h3>2. Budget Alert Banners</h3>
-      <ul>
-        <li><strong>Threshold detection:</strong> banners when a category is near (default ≥ 90%) or over its limit — e.g. <em>"Dining Out is at 95% of budget"</em>.</li>
-        <li><strong>Severity styling:</strong> distinct "warning" (near) vs "over budget" treatments.</li>
-        <li><strong>Configurable threshold</strong> per budget.</li>
-      </ul>
-      <p class="meta"><strong>Schema:</strong> add <code>budgets.alert_threshold</code> (REAL, default <code>0.9</code>). <strong>Computed</strong> from the same progress aggregation as the cards — no double counting.</p>
-    </div>
-
-    <div class="feature">
-      <h3>3. Rapid Entry Modal</h3>
-      <ul>
-        <li><strong>Trigger:</strong> floating action button (FAB) + global <code>Cmd/Ctrl+K</code> shortcut.</li>
-        <li><strong>Streamlined default:</strong> three fields — Amount, Category (autocomplete from <code>categories</code>), Date (defaults to today).</li>
-        <li><strong>"Add Details" expansion:</strong> optional Note, Account selector, type (expense/income/transfer) and transfer destination.</li>
-        <li><strong>Optimistic update:</strong> store reflects the new transaction immediately, reconciles on command return.</li>
-      </ul>
-      <p class="meta"><strong>Frontend:</strong> <code>QuickAddModal.vue</code>, global keybind handler. Reuses the existing <code>create_transaction</code> command.</p>
-    </div>
-
-    <div class="feature">
-      <h3>4. Transaction Management — Edit / Delete + Search / Filter</h3>
-      <ul>
-        <li><strong>Edit &amp; delete</strong> complete the CRUD (currently create/list only), each with <strong>atomic balance reversal</strong>: reverse the old transaction's effect and apply the new one in a single DB transaction.</li>
-        <li><strong>Card-based list:</strong> <code>TransactionCard.vue</code> showing category color/icon, amount, and date — clean cards, not a dense grid.</li>
-        <li><strong>Search</strong> across note/category and <strong>filters</strong> by date range, account, category, and type.</li>
-      </ul>
-      <p class="meta"><strong>Backend:</strong> <code>update_transaction</code>, <code>delete_transaction</code> (balance-safe). <strong>Schema:</strong> indexes on <code>transactions(date)</code>, <code>(account_id)</code>, <code>(category_id)</code> for fast filtering.</p>
-    </div>
-
-    <!-- ====================== PHASE 3 ====================== -->
-    <h2>Phase 3 — Automated Ingestion &amp; Analytics <span class="badge badge-planned">PLANNED</span></h2>
-    <p>Scales the app from manual entry to real-world volume and insight.</p>
-
-    <div class="feature">
-      <h3>5. CSV Bank Import</h3>
-      <ul>
-        <li><strong>Local-only parsing</strong> via a Rust CSV parser (the <code>csv</code> crate) — statements never leave the machine.</li>
-        <li><strong>Column mapping UI:</strong> map arbitrary bank columns to date/amount/note/type.</li>
-        <li><strong>Preview &amp; confirm:</strong> review parsed rows before they commit; whole batch inserts atomically with balance updates.</li>
-        <li><strong>Dedupe:</strong> per-row import hash prevents re-importing the same statement twice.</li>
-      </ul>
-      <p class="meta"><strong>Schema:</strong> new <code>import_batches</code> audit table + <code>transactions.import_hash</code> (nullable, indexed). <strong>Backend:</strong> <code>preview_csv_import</code>, <code>commit_csv_import</code>.</p>
-    </div>
-
-    <div class="feature">
-      <h3>6. Charts &amp; Trends</h3>
-      <ul>
-        <li><strong>Cash-flow over time</strong> (line) — income vs expense by month.</li>
-        <li><strong>Category breakdown</strong> (pie/donut) for a selected period.</li>
-        <li><strong>Month-over-month</strong> comparison (bar).</li>
-      </ul>
-      <p class="meta"><strong>Backend:</strong> read-only aggregation commands or SQL views. <strong>Frontend:</strong> a charting lib (candidate: Chart.js or ECharts — to be selected). <em>Note: pick the library before building.</em></p>
-    </div>
-
-    <div class="feature">
-      <h3>7. Recurring Transactions</h3>
-      <ul>
-        <li><strong>Rules engine:</strong> scheduled, auto-repeating transactions (rent, salary) with a cadence (weekly/monthly/etc.) and optional end date.</li>
-        <li><strong>Posting policy:</strong> per rule, either auto-post when due or prompt for confirmation on app open.</li>
-        <li><strong>Manage view:</strong> create/pause/delete rules; generated transactions are tagged to their source rule.</li>
-      </ul>
-      <p class="meta"><strong>Schema:</strong> new <code>recurring_rules</code> table (<code>cadence</code>, <code>next_run</code>, <code>auto_post</code>, <code>end_date</code>) + nullable <code>transactions.recurring_rule_id</code>. <strong>Backend:</strong> a startup scheduler that materialises due rules.</p>
-    </div>
-
-    <!-- ====================== CROSS-CUTTING ====================== -->
-    <h2>Cross-Cutting Tracks <span class="badge badge-planned">PLANNED</span></h2>
-
-    <div class="feature">
-      <h3>8. Backup &amp; Restore</h3>
-      <ul>
-        <li><strong>Export:</strong> one-click timestamped copy of the SQLite file to a chosen location.</li>
-        <li><strong>Restore:</strong> load a backup file, with an integrity check before swapping it in.</li>
-        <li><strong>Auto-backup before migrations</strong> — cheap insurance whenever <code>user_version</code> bumps.</li>
-      </ul>
-      <p class="meta"><strong>Backend:</strong> <code>export_backup</code>, <code>restore_backup</code> file commands. No schema change.</p>
-    </div>
-
-    <div class="feature">
-      <h3>9. Dark Mode / Theming</h3>
-      <ul>
-        <li><strong>Light/dark toggle</strong> built on the existing CSS-variable palette (already tokenized in Tailwind config).</li>
-        <li><strong>Respects system preference</strong> by default; user override persists.</li>
-      </ul>
-      <p class="meta"><strong>Schema:</strong> a small <code>app_settings</code> key/value table (or local persistence) for the theme preference — reusable for future settings.</p>
-    </div>
-
-    <!-- ====================== SCHEMA SUMMARY ====================== -->
-    <h2>Schema &amp; Infrastructure Additions Implied</h2>
-    <div class="note">Summary of what the planned features add on top of the Phase 1 schema, so migrations can be planned ahead (each is a new <code>user_version</code> step).</div>
+    <h3>App &amp; everyday use</h3>
     <table>
-      <thead><tr><th>Addition</th><th>For</th><th>Phase</th></tr></thead>
+      <thead><tr><th>Feature</th><th>Detail</th></tr></thead>
       <tbody>
-        <tr><td><code>budgets.alert_threshold</code> (REAL, default 0.9)</td><td>Budget alert banners</td><td>2</td></tr>
-        <tr><td>Indexes on <code>transactions(date, account_id, category_id)</code></td><td>Search / filter performance</td><td>2</td></tr>
-        <tr><td><span class="new">recurring_rules</span> table + <code>transactions.recurring_rule_id</code></td><td>Recurring transactions</td><td>3</td></tr>
-        <tr><td><span class="new">import_batches</span> table + <code>transactions.import_hash</code></td><td>CSV import &amp; dedupe</td><td>3</td></tr>
-        <tr><td>Aggregation commands / SQL views</td><td>Dashboard &amp; charts</td><td>2–3</td></tr>
-        <tr><td><span class="new">app_settings</span> key/value table</td><td>Theme &amp; future preferences</td><td>X-cut</td></tr>
+        <tr><td><strong>App shell</strong> <span class="check">✓</span></td><td>Native macOS title bar, sidebar nav, floating + button, <code>⌘K</code> quick-add, responsive narrow icon rail.</td></tr>
+        <tr><td><strong>Dark mode / theming</strong> <span class="check">✓</span></td><td>Light / dark / system; a real dark palette (not an inversion), persisted.</td></tr>
+        <tr><td><strong>Dashboard</strong> <span class="check">✓</span></td><td>Hero (income / spend / net this month), budget cards with under→near→over spectrum, alert banners, first-run empty state, month navigator.</td></tr>
+        <tr><td><strong>Transactions</strong> <span class="check">✓</span></td><td>Day-grouped cards (signed amounts, category colors), search + filters, edit &amp; delete, no-results state.</td></tr>
+        <tr><td><strong>Quick-Add modal</strong> <span class="check">✓</span></td><td><code>⌘K</code>/FAB; amount, category autocomplete, date; expand for note/account/type; expense·income·transfer; success toast.</td></tr>
+        <tr><td><strong>Budgets</strong> <span class="check">✓</span></td><td>Create a budget per category; default "Cash" account seeded so the first entry always works.</td></tr>
+        <tr><td><strong>Settings</strong> <span class="check">✓</span></td><td>Live local DB path (with copy), theme toggle.</td></tr>
       </tbody>
     </table>
 
-    <!-- ====================== DEFERRED ====================== -->
-    <h2>Deferred Backlog <span class="badge badge-deferred">DEFERRED</span></h2>
-    <p>Considered and intentionally not scheduled. Kept here because several are cheap to slot in later — the data model already accommodates some (profiles exist; accounts carry a currency).</p>
+    <h3>Backend just landed (this sprint)</h3>
     <table>
-      <thead><tr><th>Feature</th><th>Why deferred / note</th></tr></thead>
+      <thead><tr><th>Feature</th><th>Detail</th></tr></thead>
       <tbody>
-        <tr><td><strong>Reports &amp; export (PDF/CSV)</strong></td><td>Lower priority than charts; revisit once analytics queries exist (they can feed exports).</td></tr>
-        <tr><td><strong>Database encryption (SQLCipher)</strong></td><td>Stronger privacy, but adds build complexity (bundled SQLCipher) and a passphrase UX. Local file in a user-controlled folder is the current model.</td></tr>
-        <tr><td><strong>Multi-profile switching UI</strong></td><td>Schema (<code>app_profiles</code>) already supports it; just needs a switcher + profile-scoped queries. Easy to add when needed.</td></tr>
-        <tr><td><strong>Multi-currency + conversion</strong></td><td>Accounts already store a <code>currency</code>; full cross-currency aggregation (rates, conversion) is significant scope.</td></tr>
-        <tr><td><strong>Auto-update + signing/notarization</strong></td><td>Needed for real distribution, not for local development. Schedule before first public release.</td></tr>
-        <tr><td><strong>Mobile (iOS/Android)</strong></td><td>Tauri v2 supports mobile, but the cloud-folder sync model gets trickier on mobile sandboxes. Large effort.</td></tr>
-        <tr><td><strong>Localization (i18n)</strong></td><td>Multi-language UI + locale-aware number/date/currency formatting. Defer until the feature set stabilises.</td></tr>
+        <tr><td><strong>Configurable alert threshold</strong> <span class="check">✓</span></td><td><code>budgets.alert_threshold</code> column + commands (UI in progress below).</td></tr>
+        <tr><td><strong>Account update / delete</strong> <span class="check">✓</span></td><td>Rename/edit accounts; delete is refused if any transaction still references the account.</td></tr>
+        <tr><td><strong>Budget update / delete</strong> <span class="check">✓</span></td><td>Edit amount/threshold and remove budgets (UI in progress below).</td></tr>
       </tbody>
     </table>
 
-    <div class="warn"><strong>Open question for charts:</strong> the charting library (Chart.js vs ECharts vs a Vue-native option) isn't chosen yet — worth deciding before Phase 3 work begins, as it affects bundle size and the dark-mode theming approach.</div>
+    <!-- ============================================================= -->
+    <h2>2 · What we want for sure <span class="badge badge-planned">PLANNED</span></h2>
+
+    <h3>Being built right now <span class="badge badge-progress">IN PROGRESS</span></h3>
+    <table>
+      <thead><tr><th>Feature</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Accounts management UI</strong></td><td>Settings section to list / add / rename / delete accounts (uses the new backend, with the delete-guard surfaced).</td></tr>
+        <tr><td><strong>Analytics &amp; charts</strong></td><td>New Analytics page: cash-flow over time, spending-by-category donut, month-over-month — ApexCharts, theme-aware.</td></tr>
+        <tr><td><strong>Configurable budget alerts + manage</strong></td><td>Set the "alert me at X%" per budget; dashboard uses each budget's threshold; edit/delete budgets from "Manage budgets".</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Next up (committed)</h3>
+    <table>
+      <thead><tr><th>Feature</th><th>Detail</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Backup &amp; restore</strong></td><td>Export a timestamped copy of the DB and restore from one, with an integrity check.</td><td>Settings buttons exist (disabled); backend + file dialog to come.</td></tr>
+        <tr><td><strong>Category management UI</strong></td><td>Add / edit / delete categories &amp; colors (today they're only seeded defaults).</td><td>Backend mostly exists; needs an editor UI.</td></tr>
+        <tr><td><strong>CSV bank import</strong></td><td>Local Rust CSV parser, column mapping, preview, dedupe via import hash, atomic batch insert.</td><td>Phase 3. New <code>import_batches</code> table.</td></tr>
+        <tr><td><strong>Recurring transactions</strong></td><td>Scheduled/auto-repeating entries (rent, salary); post-due on launch; manage rules.</td><td>Phase 3. New <code>recurring_rules</code> table.</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ============================================================= -->
+    <h2>3 · Quality-of-life <span class="badge badge-qol">QoL</span></h2>
+    <p>Genuinely nice, not committed. Pull any of these up if it earns its place.</p>
+    <table>
+      <thead><tr><th>Feature</th><th>Why it'd be nice</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tag">DATA</span><strong>Reports &amp; export (PDF/CSV)</strong></td><td>Hand-off for records/taxes; can reuse the analytics aggregations.</td></tr>
+        <tr><td><span class="tag">BUDGET</span><strong>Budget rollover</strong></td><td>Carry unspent budget into next month.</td></tr>
+        <tr><td><span class="tag">BUDGET</span><strong>Savings goals</strong></td><td>Track progress toward a target, not just monthly limits.</td></tr>
+        <tr><td><span class="tag">TXN</span><strong>Reassign-on-delete for accounts</strong></td><td>Move an account's transactions elsewhere instead of being blocked from deleting it.</td></tr>
+        <tr><td><span class="tag">TXN</span><strong>Bulk edit / multi-select</strong></td><td>Recategorize or delete many transactions at once.</td></tr>
+        <tr><td><span class="tag">TXN</span><strong>Saved filters / smart search</strong></td><td>Pin frequent views (e.g. "Dining this month").</td></tr>
+        <tr><td><span class="tag">TXN</span><strong>Attachments / receipts</strong></td><td>Link a receipt image or richer note to a transaction.</td></tr>
+        <tr><td><span class="tag">PROFILE</span><strong>Multi-profile switcher</strong></td><td>Personal vs Business — the <code>app_profiles</code> table already supports it.</td></tr>
+        <tr><td><span class="tag">SETTINGS</span><strong>Reveal DB in Finder</strong></td><td>One click from Settings to the file on disk.</td></tr>
+        <tr><td><span class="tag">A11Y</span><strong>More keyboard shortcuts</strong></td><td>Navigate, jump to search, new budget, etc. beyond <code>⌘K</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ============================================================= -->
+    <h2>4 · Not now <span class="badge badge-deferred">PARKED</span></h2>
+    <p>Considered and intentionally parked — revisit when the core is solid or there's a real need.</p>
+    <table>
+      <thead><tr><th>Feature</th><th>Why parked</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Database encryption (SQLCipher)</strong></td><td>Adds build complexity + a passphrase UX; local file in a user-controlled folder is the current model.</td></tr>
+        <tr><td><strong>Multi-currency + conversion</strong></td><td>Accounts store a currency, but cross-currency aggregation (rates) is significant scope.</td></tr>
+        <tr><td><strong>Mobile (iOS/Android)</strong></td><td>Tauri supports it, but the cloud-folder sync model gets tricky on mobile sandboxes.</td></tr>
+        <tr><td><strong>Auto-update + signing / notarization</strong></td><td>Needed for public distribution, not for local development.</td></tr>
+        <tr><td><strong>Localization (i18n)</strong></td><td>Defer until the feature set stabilises.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Status reflects the build as of the current sprint (Phase 3: Accounts &amp; Analytics). The "in progress" items are being implemented by parallel agents now; they move to <strong>SHIPPED</strong> once verified and committed.</div>
 </div>
 </body>
 </html>
