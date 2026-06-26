@@ -107,37 +107,55 @@ fn migrate_v1(conn: &Connection) -> rusqlite::Result<()> {
     )
 }
 
-/// Seed first-run defaults: one profile plus a handful of flat categories.
+/// Seed first-run defaults: a profile, a handful of flat categories, and a
+/// default account.
 ///
-/// Idempotent: if any profile already exists, this is a no-op.
+/// Each step is independently idempotent (gated on its own table being
+/// empty), so a database created before the default-account seed existed
+/// still gains an account on the next launch. Without at least one account,
+/// every transaction insert would fail the `account_id` foreign key.
 pub fn seed_defaults(conn: &Connection) -> rusqlite::Result<()> {
     let profile_count: i64 =
         conn.query_row("SELECT COUNT(*) FROM app_profiles;", [], |row| row.get(0))?;
-    if profile_count > 0 {
-        return Ok(());
-    }
 
-    // Use a fixed ISO-8601-ish timestamp source via SQLite's datetime().
-    conn.execute(
-        "INSERT INTO app_profiles (profile_name, created_at) VALUES (?1, datetime('now'));",
-        ["Personal"],
-    )?;
-    let profile_id = conn.last_insert_rowid();
+    let profile_id: i64 = if profile_count == 0 {
+        // Use a fixed ISO-8601-ish timestamp source via SQLite's datetime().
+        conn.execute(
+            "INSERT INTO app_profiles (profile_name, created_at) VALUES (?1, datetime('now'));",
+            ["Personal"],
+        )?;
+        let pid = conn.last_insert_rowid();
 
-    // (name, color_code, type)
-    let categories: [(&str, &str, &str); 5] = [
-        ("Dining Out", "#E57373", "expense"),
-        ("Groceries", "#81C784", "expense"),
-        ("Rent", "#64B5F6", "expense"),
-        ("Transport", "#FFB74D", "expense"),
-        ("Salary", "#4DB6AC", "income"),
-    ];
+        // (name, color_code, type)
+        let categories: [(&str, &str, &str); 5] = [
+            ("Dining Out", "#E57373", "expense"),
+            ("Groceries", "#81C784", "expense"),
+            ("Rent", "#64B5F6", "expense"),
+            ("Transport", "#FFB74D", "expense"),
+            ("Salary", "#4DB6AC", "income"),
+        ];
+        let mut stmt = conn.prepare(
+            "INSERT INTO categories (profile_id, name, color_code, type) VALUES (?1, ?2, ?3, ?4);",
+        )?;
+        for (name, color, kind) in categories {
+            stmt.execute(rusqlite::params![pid, name, color, kind])?;
+        }
+        pid
+    } else {
+        conn.query_row("SELECT id FROM app_profiles ORDER BY id LIMIT 1;", [], |row| {
+            row.get(0)
+        })?
+    };
 
-    let mut stmt = conn.prepare(
-        "INSERT INTO categories (profile_id, name, color_code, type) VALUES (?1, ?2, ?3, ?4);",
-    )?;
-    for (name, color, kind) in categories {
-        stmt.execute(rusqlite::params![profile_id, name, color, kind])?;
+    // Every transaction references an account — guarantee at least one exists.
+    let account_count: i64 =
+        conn.query_row("SELECT COUNT(*) FROM accounts;", [], |row| row.get(0))?;
+    if account_count == 0 {
+        conn.execute(
+            "INSERT INTO accounts (profile_id, name, balance, currency, type) \
+             VALUES (?1, 'Cash', 0, 'USD', 'cash');",
+            rusqlite::params![profile_id],
+        )?;
     }
 
     Ok(())
@@ -226,6 +244,42 @@ mod tests {
     }
 
     #[test]
+    fn seed_creates_a_default_account() {
+        let conn = Connection::open_in_memory().unwrap();
+        init(&conn).unwrap();
+        seed_defaults(&conn).unwrap();
+
+        let accounts: i64 = conn
+            .query_row("SELECT COUNT(*) FROM accounts;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(accounts, 1, "expected one default account so transactions can be inserted");
+    }
+
+    #[test]
+    fn seed_backfills_account_for_legacy_db() {
+        // Simulate a DB seeded before the default-account step existed:
+        // a profile and categories, but zero accounts.
+        let conn = Connection::open_in_memory().unwrap();
+        init(&conn).unwrap();
+        conn.execute(
+            "INSERT INTO app_profiles (profile_name, created_at) VALUES ('Personal', datetime('now'));",
+            [],
+        )
+        .unwrap();
+
+        seed_defaults(&conn).unwrap();
+
+        let accounts: i64 = conn
+            .query_row("SELECT COUNT(*) FROM accounts;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(accounts, 1, "existing profile should still get a default account");
+        let profiles: i64 = conn
+            .query_row("SELECT COUNT(*) FROM app_profiles;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(profiles, 1, "must not create a second profile");
+    }
+
+    #[test]
     fn seed_is_idempotent() {
         let conn = Connection::open_in_memory().unwrap();
         init(&conn).unwrap();
@@ -241,5 +295,10 @@ mod tests {
             .query_row("SELECT COUNT(*) FROM categories;", [], |row| row.get(0))
             .unwrap();
         assert_eq!(categories, 5, "seeding twice must not duplicate categories");
+
+        let accounts: i64 = conn
+            .query_row("SELECT COUNT(*) FROM accounts;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(accounts, 1, "seeding twice must not duplicate the default account");
     }
 }

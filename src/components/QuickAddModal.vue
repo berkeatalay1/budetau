@@ -132,6 +132,11 @@ const amountPrefix = computed(() => (txType.value === 'income' ? '+$' : '$'))
 // ── Validation ───────────────────────────────────────────────────────────────
 const errors = ref<string[]>([])
 
+// Account the transaction posts to: explicit selection, else the first account.
+const resolvedAccountId = computed<number | null>(
+  () => accountId.value ?? accountStore.data[0]?.id ?? null,
+)
+
 function validate(): boolean {
   errors.value = []
   if (!amountCents.value || amountCents.value <= 0)
@@ -140,6 +145,8 @@ function validate(): boolean {
     errors.value.push('Category is required.')
   if (txType.value === 'transfer' && !transferAccountId.value)
     errors.value.push('Destination account is required for transfers.')
+  if (resolvedAccountId.value == null)
+    errors.value.push('No account is available yet — please try again in a moment.')
   return errors.value.length === 0
 }
 
@@ -151,7 +158,7 @@ async function submit() {
   isSubmitting.value = true
   try {
     const payload: NewTransaction = {
-      accountId: accountId.value ?? accountStore.data[0]?.id ?? 0,
+      accountId: resolvedAccountId.value as number,
       amount: amountCents.value,
       categoryId: selectedCategoryId.value,
       date: date.value,
@@ -190,9 +197,9 @@ watch(
       errors.value = []
       autocompleteOpen.value = false
 
-      // Fetch data if empty
-      if (categoryStore.data.length === 0) categoryStore.fetchAll()
-      if (accountStore.data.length === 0) accountStore.fetchAll()
+      // Fetch data if empty (awaited so a fast submit can't beat the load)
+      if (categoryStore.data.length === 0) await categoryStore.fetchAll()
+      if (accountStore.data.length === 0) await accountStore.fetchAll()
 
       await nextTick()
       amountInputRef.value?.focus()
