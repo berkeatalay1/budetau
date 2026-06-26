@@ -8,6 +8,7 @@ import HeroSummary from '../components/dashboard/HeroSummary.vue'
 import BudgetCard from '../components/dashboard/BudgetCard.vue'
 import AlertBanner from '../components/dashboard/AlertBanner.vue'
 import AddBudgetModal from '../components/dashboard/AddBudgetModal.vue'
+import ManageBudgetsModal from '../components/dashboard/ManageBudgetsModal.vue'
 
 // ─── stores ───────────────────────────────────────────────────────────────────
 const txStore = useTransactionStore()
@@ -15,8 +16,9 @@ const budgetStore = useBudgetStore()
 const categoryStore = useCategoryStore()
 const quickAdd = useQuickAddStore()
 
-// ─── budget creation modal ─────────────────────────────────────────────────────
+// ─── modals ───────────────────────────────────────────────────────────────────
 const showAddBudget = ref(false)
+const showManageBudgets = ref(false)
 
 // ─── month navigation ─────────────────────────────────────────────────────────
 const today = new Date()
@@ -78,6 +80,7 @@ interface BudgetRow {
   spent: number
   limit: number
   pct: number
+  alertThreshold: number
   status: 'under' | 'near' | 'over'
 }
 
@@ -88,7 +91,9 @@ const budgetRows = computed<BudgetRow[]>(() => {
       .filter((tx) => tx.type === 'expense' && tx.categoryId === b.categoryId)
       .reduce((sum, tx) => sum + tx.amount, 0)
     const pct = b.amount > 0 ? spent / b.amount : 0
-    const status: 'under' | 'near' | 'over' = pct >= 1 ? 'over' : pct >= 0.9 ? 'near' : 'under'
+    const threshold = b.alertThreshold
+    const status: 'under' | 'near' | 'over' =
+      pct >= 1 ? 'over' : pct >= threshold ? 'near' : 'under'
     return {
       id: b.id,
       name: category?.name ?? 'Unknown',
@@ -96,12 +101,13 @@ const budgetRows = computed<BudgetRow[]>(() => {
       spent,
       limit: b.amount,
       pct,
+      alertThreshold: threshold,
       status,
     }
   })
 })
 
-// ─── alert banners (near ≥ 90% or over ≥ 100%) ───────────────────────────────
+// ─── alert banners (near ≥ threshold or over ≥ 100%) ─────────────────────────
 const alerts = computed(() =>
   budgetRows.value.filter(
     (b): b is BudgetRow & { status: 'near' | 'over' } => b.status === 'near' || b.status === 'over',
@@ -235,7 +241,7 @@ onMounted(async () => {
         <h2 class="text-[16px] font-semibold text-primary leading-none">Budgets</h2>
         <button
           class="text-[13px] font-semibold text-accent cursor-pointer hover:underline"
-          @click="showAddBudget = true"
+          @click="showManageBudgets = true"
         >
           Manage budgets
         </button>
@@ -249,6 +255,7 @@ onMounted(async () => {
           :color-code="b.colorCode"
           :spent="b.spent"
           :limit="b.limit"
+          :alert-threshold="b.alertThreshold"
         />
       </div>
     </div>
@@ -265,6 +272,9 @@ onMounted(async () => {
     </div>
   </div>
 
-  <!-- Budget creation modal — available from empty state, header link, and no-budgets card -->
+  <!-- Budget creation modal — available from empty state and no-budgets card -->
   <AddBudgetModal :open="showAddBudget" @close="showAddBudget = false" />
+
+  <!-- Budget management modal — edit + delete existing budgets -->
+  <ManageBudgetsModal :open="showManageBudgets" @close="showManageBudgets = false" />
 </template>

@@ -17,6 +17,35 @@ const error = ref<string | null>(null)
 const isSubmitting = ref(false)
 const amountRef = ref<HTMLInputElement | null>(null)
 
+// Threshold: preset buttons + custom input
+type ThresholdPreset = 80 | 90 | 100 | 'custom'
+const thresholdPreset = ref<ThresholdPreset>(90)
+const customThresholdStr = ref('90')
+
+const thresholdPct = computed<number>(() => {
+  if (thresholdPreset.value === 'custom') {
+    const v = parseFloat(customThresholdStr.value)
+    return isNaN(v) ? 90 : v
+  }
+  return thresholdPreset.value
+})
+
+const thresholdFraction = computed(() => thresholdPct.value / 100)
+
+const thresholdError = computed<string | null>(() => {
+  if (thresholdPreset.value !== 'custom') return null
+  const v = parseFloat(customThresholdStr.value)
+  if (isNaN(v) || v < 1 || v > 100) return 'Enter a value between 1 and 100.'
+  return null
+})
+
+function selectPreset(preset: ThresholdPreset): void {
+  thresholdPreset.value = preset
+  if (preset !== 'custom') {
+    customThresholdStr.value = String(preset)
+  }
+}
+
 // Expense categories that don't already have a budget.
 const availableCategories = computed(() => {
   const budgeted = new Set(budgetStore.data.map((b) => b.categoryId))
@@ -32,6 +61,8 @@ function reset(): void {
   categoryId.value = availableCategories.value[0]?.id ?? null
   amountStr.value = ''
   period.value = 'monthly'
+  thresholdPreset.value = 90
+  customThresholdStr.value = '90'
   error.value = null
 }
 
@@ -58,6 +89,10 @@ async function submit(): Promise<void> {
     error.value = 'Enter a budget amount.'
     return
   }
+  if (thresholdError.value) {
+    error.value = thresholdError.value
+    return
+  }
   const category = categoryStore.byId.get(categoryId.value)
   if (!category) {
     error.value = 'Category not found.'
@@ -70,7 +105,7 @@ async function submit(): Promise<void> {
       categoryId: categoryId.value,
       period: period.value,
       amount: amountCents.value,
-      alertThreshold: 0.9,
+      alertThreshold: thresholdFraction.value,
     }
     await budgetStore.add(payload)
     emit('close')
@@ -131,6 +166,51 @@ function onScrimKeydown(e: KeyboardEvent): void {
             @keydown.enter="submit"
           />
         </div>
+
+        <!-- Alert threshold -->
+        <label class="block text-caption text-secondary mb-1.5">Alert me at __% of budget</label>
+        <div class="flex gap-2 mb-1.5">
+          <button
+            v-for="preset in [80, 90, 100] as const"
+            :key="preset"
+            class="flex-1 rounded-control border py-2 text-[13px] font-semibold transition-colors"
+            :class="
+              thresholdPreset === preset
+                ? 'border-accent bg-accent/10 text-accent'
+                : 'border-border bg-card text-secondary hover:text-primary hover:bg-bg'
+            "
+            @click="selectPreset(preset)"
+          >
+            {{ preset }}%
+          </button>
+          <button
+            class="flex-1 rounded-control border py-2 text-[13px] font-semibold transition-colors"
+            :class="
+              thresholdPreset === 'custom'
+                ? 'border-accent bg-accent/10 text-accent'
+                : 'border-border bg-card text-secondary hover:text-primary hover:bg-bg'
+            "
+            @click="selectPreset('custom')"
+          >
+            Custom
+          </button>
+        </div>
+        <div
+          v-if="thresholdPreset === 'custom'"
+          class="flex items-center mb-1 rounded-control border border-border bg-card px-3 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20"
+        >
+          <input
+            v-model="customThresholdStr"
+            inputmode="decimal"
+            placeholder="90"
+            class="num flex-1 bg-transparent py-2.5 text-body text-primary outline-none"
+          />
+          <span class="text-secondary text-body">%</span>
+        </div>
+        <p v-if="thresholdError" class="text-caption text-red mb-2">{{ thresholdError }}</p>
+        <p v-else class="text-caption text-secondary mb-4">
+          You'll be alerted when spending reaches {{ Math.round(thresholdPct) }}% of your limit.
+        </p>
 
         <p v-if="error" class="text-caption text-red mb-3">{{ error }}</p>
 

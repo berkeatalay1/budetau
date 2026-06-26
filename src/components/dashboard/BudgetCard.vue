@@ -7,6 +7,7 @@ const props = defineProps<{
   colorCode: string | null
   spent: number
   limit: number
+  alertThreshold: number
 }>()
 
 type Status = 'under' | 'near' | 'over'
@@ -17,7 +18,7 @@ const barWidth = computed(() => Math.min(100, pctDisplay.value) + '%')
 
 const status = computed<Status>(() => {
   if (pct.value >= 1) return 'over'
-  if (pct.value >= 0.9) return 'near'
+  if (pct.value >= props.alertThreshold) return 'near'
   return 'under'
 })
 

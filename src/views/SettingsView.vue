@@ -2,10 +2,18 @@
 import { onMounted, ref } from 'vue'
 import { getDbPath } from '../api'
 import { useThemeStore } from '../stores/theme'
+import { useAccountStore } from '../stores/account'
 import type { ThemeMode } from '../stores/theme'
+import type { Account } from '../types'
+import AccountFormModal from '../components/settings/AccountFormModal.vue'
+import EditAccountModal from '../components/settings/EditAccountModal.vue'
+import ConfirmDialog from '../components/transactions/ConfirmDialog.vue'
+import { formatCents } from '../lib/format'
 
 const themeStore = useThemeStore()
+const accountStore = useAccountStore()
 
+// ── DB path ───────────────────────────────────────────────────────────────────
 const dbPath = ref<string | null>(null)
 const isLoading = ref(false)
 const dbError = ref<string | null>(null)
@@ -20,6 +28,10 @@ onMounted(async () => {
     dbError.value = err instanceof Error ? err.message : String(err)
   } finally {
     isLoading.value = false
+  }
+
+  if (accountStore.data.length === 0) {
+    await accountStore.fetchAll()
   }
 })
 
@@ -41,6 +53,103 @@ const themeOptions: { value: ThemeMode; label: string }[] = [
   { value: 'dark', label: 'Dark' },
   { value: 'system', label: 'System' },
 ]
+
+// ── Accounts card state ───────────────────────────────────────────────────────
+const showAddModal = ref(false)
+const editingAccount = ref<Account | null>(null)
+const deletingAccount = ref<Account | null>(null)
+const deleteError = ref<string | null>(null)
+const acctActionError = ref<string | null>(null)
+
+// Avatar color palette — cycle through via account id
+const avatarColors = [
+  'bg-accent/15 text-accent',
+  'bg-green/15 text-green',
+  'bg-amber/15 text-amber',
+  'bg-red/15 text-red',
+]
+
+function avatarClass(account: Account): string {
+  return avatarColors[account.id % avatarColors.length]
+}
+
+function accountInitial(account: Account): string {
+  return account.name.trim().charAt(0).toUpperCase()
+}
+
+function typeLabel(t: string): string {
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+}
+
+// ── Profile id for new accounts ───────────────────────────────────────────────
+function getProfileId(): number {
+  return accountStore.data[0]?.profileId ?? 1
+}
+
+// ── Add ───────────────────────────────────────────────────────────────────────
+async function handleAdd(payload: {
+  profileId: number
+  name: string
+  type: string
+  currency: string
+  balance: number
+}) {
+  acctActionError.value = null
+  try {
+    await accountStore.add(payload)
+    showAddModal.value = false
+  } catch (err) {
+    acctActionError.value = err instanceof Error ? err.message : String(err)
+  }
+}
+
+// ── Edit ──────────────────────────────────────────────────────────────────────
+async function handleEdit(payload: Account) {
+  acctActionError.value = null
+  try {
+    await accountStore.update(payload)
+    editingAccount.value = null
+  } catch (err) {
+    acctActionError.value = err instanceof Error ? err.message : String(err)
+  }
+}
+
+// ── Open modals (methods, not inline handlers — Prettier strips the ; in
+// multi-statement template expressions, which breaks the compiler) ───────────
+function openAddAccount() {
+  showAddModal.value = true
+  acctActionError.value = null
+}
+
+function startEdit(account: Account) {
+  editingAccount.value = account
+  acctActionError.value = null
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+function requestDelete(account: Account) {
+  deletingAccount.value = account
+  deleteError.value = null
+}
+
+async function confirmDelete() {
+  if (!deletingAccount.value) return
+  deleteError.value = null
+  try {
+    await accountStore.remove(deletingAccount.value.id)
+    deletingAccount.value = null
+  } catch (err) {
+    // Backend blocks deletes when the account has transactions — surface it.
+    deleteError.value =
+      err instanceof Error
+        ? err.message.includes('transaction')
+          ? 'This account has transactions — reassign or delete them first.'
+          : err.message
+        : String(err)
+    // Keep dialog open so user sees the error, then close it
+    deletingAccount.value = null
+  }
+}
 </script>
 
 <template>
@@ -142,6 +251,153 @@ const themeOptions: { value: ThemeMode; label: string }[] = [
         </div>
       </div>
 
+      <!-- ── Accounts card ──────────────────────────────────────────────────── -->
+      <div class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card">
+        <!-- Card header -->
+        <div class="mb-1 flex items-center justify-between">
+          <h2 class="text-[15px] font-semibold text-primary">Accounts</h2>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded-control border border-border bg-bg px-3 py-[7px] text-[12px] font-semibold text-primary transition-colors hover:bg-card"
+            @click="openAddAccount"
+          >
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+              <path
+                d="M5.5 1v9M1 5.5h9"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+              />
+            </svg>
+            Add account
+          </button>
+        </div>
+        <p class="mb-4 text-[13px] leading-relaxed text-secondary">
+          Manage your bank accounts, cards, and wallets.
+        </p>
+
+        <!-- Inline action error (add/edit) -->
+        <div
+          v-if="acctActionError"
+          class="mb-3 flex items-center gap-2 rounded-[9px] border border-red/40 bg-red/10 px-[13px] py-[10px]"
+          role="alert"
+        >
+          <span class="flex-1 text-[12px] leading-relaxed text-red">{{ acctActionError }}</span>
+          <button
+            type="button"
+            class="text-red/60 hover:text-red transition-colors"
+            aria-label="Dismiss error"
+            @click="acctActionError = null"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path
+                d="M9 3L3 9M3 3l6 6"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Delete error banner -->
+        <div
+          v-if="deleteError"
+          class="mb-3 flex items-center gap-2 rounded-[9px] border border-red/40 bg-red/10 px-[13px] py-[10px]"
+          role="alert"
+        >
+          <span class="flex-1 text-[12px] leading-relaxed text-red">{{ deleteError }}</span>
+          <button
+            type="button"
+            class="text-red/60 hover:text-red transition-colors"
+            aria-label="Dismiss error"
+            @click="deleteError = null"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path
+                d="M9 3L3 9M3 3l6 6"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Loading state -->
+        <div v-if="accountStore.isLoading" class="py-4 text-center text-[13px] text-secondary">
+          Loading…
+        </div>
+
+        <!-- Empty state -->
+        <div
+          v-else-if="accountStore.data.length === 0"
+          class="rounded-[9px] border border-dashed border-border py-8 text-center"
+        >
+          <p class="text-[13px] text-secondary">No accounts yet.</p>
+          <button
+            type="button"
+            class="mt-2 text-[13px] font-semibold text-accent hover:underline"
+            @click="openAddAccount"
+          >
+            Add your first account
+          </button>
+        </div>
+
+        <!-- Account list -->
+        <ul v-else class="flex flex-col divide-y divide-border/60" role="list">
+          <li
+            v-for="account in accountStore.data"
+            :key="account.id"
+            class="group flex items-center gap-3 py-[11px] first:pt-0 last:pb-0"
+          >
+            <!-- Avatar / initial -->
+            <div
+              class="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[14px] font-bold"
+              :class="avatarClass(account)"
+              aria-hidden="true"
+            >
+              {{ accountInitial(account) }}
+            </div>
+
+            <!-- Name + type -->
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-[13px] font-semibold text-primary leading-snug">
+                {{ account.name }}
+              </p>
+              <p class="text-[11px] text-secondary">{{ typeLabel(account.type) }}</p>
+            </div>
+
+            <!-- Balance -->
+            <span class="num text-[13px] font-semibold text-primary tabular-nums">
+              {{ formatCents(account.balance, account.currency) }}
+            </span>
+
+            <!-- Row actions (visible on hover / focus-within) -->
+            <div
+              class="ml-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+            >
+              <button
+                type="button"
+                class="rounded-[6px] border border-border bg-card px-2.5 py-1.5 text-[11px] font-semibold text-secondary hover:text-primary transition-colors"
+                :aria-label="`Edit ${account.name}`"
+                @click="startEdit(account)"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                class="rounded-[6px] border border-red/30 bg-red/5 px-2.5 py-1.5 text-[11px] font-semibold text-red hover:bg-red/10 transition-colors"
+                :aria-label="`Delete ${account.name}`"
+                @click="requestDelete(account)"
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        </ul>
+      </div>
+
       <!-- ── Backup & restore card ──────────────────────────────────────── -->
       <div class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card">
         <h2 class="mb-1 text-[15px] font-semibold text-primary">Backup &amp; restore</h2>
@@ -185,4 +441,29 @@ const themeOptions: { value: ThemeMode; label: string }[] = [
       </div>
     </div>
   </div>
+
+  <!-- ── Modals ──────────────────────────────────────────────────────────────── -->
+  <AccountFormModal
+    v-if="showAddModal"
+    :profile-id="getProfileId()"
+    @save="handleAdd"
+    @cancel="showAddModal = false"
+  />
+
+  <EditAccountModal
+    v-if="editingAccount"
+    :account="editingAccount"
+    @save="handleEdit"
+    @cancel="editingAccount = null"
+  />
+
+  <ConfirmDialog
+    v-if="deletingAccount"
+    title="Delete account?"
+    :message="`Delete &quot;${deletingAccount.name}&quot;? This cannot be undone.`"
+    confirm-label="Delete"
+    :danger="true"
+    @confirm="confirmDelete"
+    @cancel="deletingAccount = null"
+  />
 </template>

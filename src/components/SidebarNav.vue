@@ -73,6 +73,29 @@
         <span class="hidden min-[860px]:block">Transactions</span>
       </router-link>
 
+      <!-- Analytics -->
+      <router-link
+        to="/analytics"
+        class="flex items-center gap-[11px] rounded-control px-2.5 py-[9px] text-[13px] font-medium text-secondary hover:bg-accent/10 hover:text-accent transition-colors"
+        active-class="bg-accent/10 !text-accent font-semibold"
+        title="Analytics"
+      >
+        <!-- Bar chart icon -->
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="currentColor"
+          class="flex-shrink-0"
+          aria-hidden="true"
+        >
+          <rect x="0" y="9" width="4" height="7" rx="1" />
+          <rect x="6" y="5" width="4" height="11" rx="1" />
+          <rect x="12" y="1" width="4" height="15" rx="1" />
+        </svg>
+        <span class="hidden min-[860px]:block">Analytics</span>
+      </router-link>
+
       <!-- Settings -->
       <router-link
         to="/settings"
