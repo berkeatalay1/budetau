@@ -52,6 +52,8 @@ pub struct Budget {
     pub category_id: i64,
     pub period: String,
     pub amount: i64,
+    /// Fraction of `amount` at which the budget is "near" its limit (0.0–1.0).
+    pub alert_threshold: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -98,6 +100,13 @@ pub struct NewBudget {
     pub category_id: i64,
     pub period: String,
     pub amount: i64,
+    /// Defaults to 0.9 (90%) when omitted by the frontend.
+    #[serde(default = "default_alert_threshold")]
+    pub alert_threshold: f64,
+}
+
+fn default_alert_threshold() -> f64 {
+    0.9
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -144,6 +153,7 @@ fn map_budget(row: &rusqlite::Row<'_>) -> rusqlite::Result<Budget> {
         category_id: row.get("category_id")?,
         period: row.get("period")?,
         amount: row.get("amount")?,
+        alert_threshold: row.get("alert_threshold")?,
     })
 }
 
@@ -178,7 +188,8 @@ fn select_categories(conn: &Connection) -> rusqlite::Result<Vec<Category>> {
 
 fn select_budgets(conn: &Connection) -> rusqlite::Result<Vec<Budget>> {
     let mut stmt = conn.prepare(
-        "SELECT id, profile_id, category_id, period, amount FROM budgets ORDER BY id;",
+        "SELECT id, profile_id, category_id, period, amount, alert_threshold \
+         FROM budgets ORDER BY id;",
     )?;
     let rows = stmt.query_map([], map_budget)?;
     rows.collect()
@@ -211,7 +222,8 @@ fn fetch_category(conn: &Connection, id: i64) -> rusqlite::Result<Category> {
 
 fn fetch_budget(conn: &Connection, id: i64) -> rusqlite::Result<Budget> {
     conn.query_row(
-        "SELECT id, profile_id, category_id, period, amount FROM budgets WHERE id = ?1;",
+        "SELECT id, profile_id, category_id, period, amount, alert_threshold \
+         FROM budgets WHERE id = ?1;",
         params![id],
         map_budget,
     )
@@ -245,10 +257,57 @@ fn insert_category(conn: &Connection, new: &NewCategory) -> rusqlite::Result<Cat
 
 fn insert_budget(conn: &Connection, new: &NewBudget) -> rusqlite::Result<Budget> {
     conn.execute(
-        "INSERT INTO budgets (profile_id, category_id, period, amount) VALUES (?1, ?2, ?3, ?4);",
-        params![new.profile_id, new.category_id, new.period, new.amount],
+        "INSERT INTO budgets (profile_id, category_id, period, amount, alert_threshold) \
+         VALUES (?1, ?2, ?3, ?4, ?5);",
+        params![
+            new.profile_id,
+            new.category_id,
+            new.period,
+            new.amount,
+            new.alert_threshold
+        ],
     )?;
     fetch_budget(conn, conn.last_insert_rowid())
+}
+
+fn update_budget_logic(conn: &Connection, b: &Budget) -> rusqlite::Result<Budget> {
+    conn.execute(
+        "UPDATE budgets SET category_id = ?1, period = ?2, amount = ?3, alert_threshold = ?4 \
+         WHERE id = ?5;",
+        params![b.category_id, b.period, b.amount, b.alert_threshold, b.id],
+    )?;
+    fetch_budget(conn, b.id)
+}
+
+fn delete_budget_logic(conn: &Connection, id: i64) -> rusqlite::Result<()> {
+    conn.execute("DELETE FROM budgets WHERE id = ?1;", params![id])?;
+    Ok(())
+}
+
+fn update_account_logic(conn: &Connection, a: &Account) -> rusqlite::Result<Account> {
+    conn.execute(
+        "UPDATE accounts SET name = ?1, currency = ?2, type = ?3 WHERE id = ?4;",
+        params![a.name, a.currency, a.r#type, a.id],
+    )?;
+    fetch_account(conn, a.id)
+}
+
+/// Delete an account, refusing if any transaction still references it (either
+/// as its account or as a transfer destination) — that would orphan history
+/// and break balances.
+fn delete_account_logic(conn: &Connection, id: i64) -> rusqlite::Result<()> {
+    let referencing: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM transactions WHERE account_id = ?1 OR transfer_account_id = ?1;",
+        params![id],
+        |row| row.get(0),
+    )?;
+    if referencing > 0 {
+        return Err(rusqlite::Error::InvalidParameterName(format!(
+            "account has {referencing} transaction(s); reassign or delete them first"
+        )));
+    }
+    conn.execute("DELETE FROM accounts WHERE id = ?1;", params![id])?;
+    Ok(())
 }
 
 /// Apply (`dir = 1`) or reverse (`dir = -1`) a transaction's effect on
@@ -456,6 +515,21 @@ pub fn create_account(
 }
 
 #[tauri::command]
+pub fn update_account(
+    state: tauri::State<'_, DbState>,
+    account: Account,
+) -> Result<Account, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    update_account_logic(&conn, &account).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_account(state: tauri::State<'_, DbState>, id: i64) -> Result<(), String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    delete_account_logic(&conn, id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn create_category(
     state: tauri::State<'_, DbState>,
     category: NewCategory,
@@ -471,6 +545,18 @@ pub fn create_budget(
 ) -> Result<Budget, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     insert_budget(&conn, &budget).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn update_budget(state: tauri::State<'_, DbState>, budget: Budget) -> Result<Budget, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    update_budget_logic(&conn, &budget).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_budget(state: tauri::State<'_, DbState>, id: i64) -> Result<(), String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    delete_budget_logic(&conn, id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -664,10 +750,12 @@ mod tests {
                 category_id: cat.id,
                 period: "monthly".into(),
                 amount: 12_000,
+                alert_threshold: 0.9,
             },
         )
         .unwrap();
         assert_eq!(budget.amount, 12_000);
+        assert_eq!(budget.alert_threshold, 0.9);
         assert_eq!(select_budgets(&conn).unwrap().len(), 1);
     }
 
@@ -768,5 +856,86 @@ mod tests {
         delete_transaction_logic(&mut conn, t.id).unwrap();
         assert_eq!(balance_of(&conn, checking), 100_000);
         assert_eq!(balance_of(&conn, savings), 50_000);
+    }
+
+    #[test]
+    fn update_budget_changes_amount_and_threshold() {
+        let (conn, _c, _s) = setup();
+        let profile_id = select_accounts(&conn).unwrap()[0].profile_id;
+        let cat = insert_category(
+            &conn,
+            &NewCategory {
+                profile_id,
+                name: "Fun".into(),
+                color_code: None,
+                r#type: "expense".into(),
+            },
+        )
+        .unwrap();
+        let mut budget = insert_budget(
+            &conn,
+            &NewBudget {
+                profile_id,
+                category_id: cat.id,
+                period: "monthly".into(),
+                amount: 10_000,
+                alert_threshold: 0.9,
+            },
+        )
+        .unwrap();
+
+        budget.amount = 15_000;
+        budget.alert_threshold = 0.75;
+        let updated = update_budget_logic(&conn, &budget).unwrap();
+        assert_eq!(updated.amount, 15_000);
+        assert_eq!(updated.alert_threshold, 0.75);
+
+        delete_budget_logic(&conn, budget.id).unwrap();
+        assert_eq!(select_budgets(&conn).unwrap().len(), 0);
+    }
+
+    #[test]
+    fn update_account_renames() {
+        let (conn, checking, _s) = setup();
+        let mut acc = fetch_account(&conn, checking).unwrap();
+        acc.name = "Everyday".into();
+        let updated = update_account_logic(&conn, &acc).unwrap();
+        assert_eq!(updated.name, "Everyday");
+    }
+
+    #[test]
+    fn delete_account_refused_when_referenced() {
+        let (mut conn, checking, _s) = setup();
+        insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: checking,
+                amount: 1_000,
+                category_id: None,
+                date: "2026-06-25".into(),
+                note: None,
+                r#type: "expense".into(),
+                transfer_account_id: None,
+            },
+        )
+        .unwrap();
+
+        // Referenced account cannot be deleted.
+        assert!(delete_account_logic(&conn, checking).is_err());
+
+        // An unreferenced account can.
+        let profile_id = fetch_account(&conn, checking).unwrap().profile_id;
+        let spare = insert_account(
+            &conn,
+            &NewAccount {
+                profile_id,
+                name: "Spare".into(),
+                balance: 0,
+                currency: "USD".into(),
+                r#type: "cash".into(),
+            },
+        )
+        .unwrap();
+        delete_account_logic(&conn, spare.id).unwrap();
     }
 }

@@ -24,7 +24,7 @@ pub fn resolve_db_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 /// The current schema version produced by [`init`].
-const CURRENT_SCHEMA_VERSION: i64 = 1;
+const CURRENT_SCHEMA_VERSION: i64 = 2;
 
 /// Initialise a connection: configure pragmas and run pending migrations.
 ///
@@ -46,14 +46,33 @@ pub fn init(conn: &Connection) -> rusqlite::Result<()> {
 fn run_migrations(conn: &Connection) -> rusqlite::Result<()> {
     let version: i64 = conn.query_row("PRAGMA user_version;", [], |row| row.get(0))?;
 
+    // Each step runs independently and bumps the version, so a database at any
+    // older version catches up through every intermediate migration.
+    // `user_version` does not accept a bound parameter; the literal is an
+    // internal constant, not user input.
     if version < 1 {
         migrate_v1(conn)?;
-        // `user_version` does not accept a bound parameter, so format it in.
-        // The value is an internal constant, not user input.
-        conn.execute_batch(&format!("PRAGMA user_version = {CURRENT_SCHEMA_VERSION};"))?;
+        conn.execute_batch("PRAGMA user_version = 1;")?;
+    }
+    if version < 2 {
+        migrate_v2(conn)?;
+        conn.execute_batch("PRAGMA user_version = 2;")?;
     }
 
+    debug_assert_eq!(
+        conn.query_row("PRAGMA user_version;", [], |row| row.get::<_, i64>(0))?,
+        CURRENT_SCHEMA_VERSION
+    );
     Ok(())
+}
+
+/// v2: per-budget alert threshold (fraction of the limit at which a budget is
+/// considered "near" — e.g. 0.9 = 90%). Added via ALTER so existing budgets
+/// keep working.
+fn migrate_v2(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute_batch(
+        "ALTER TABLE budgets ADD COLUMN alert_threshold REAL NOT NULL DEFAULT 0.9;",
+    )
 }
 
 /// The v1 schema. Money is always stored as INTEGER minor units (cents);

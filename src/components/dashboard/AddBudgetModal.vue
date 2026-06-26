@@ -70,6 +70,7 @@ async function submit(): Promise<void> {
       categoryId: categoryId.value,
       period: period.value,
       amount: amountCents.value,
+      alertThreshold: 0.9,
     }
     await budgetStore.add(payload)
     emit('close')

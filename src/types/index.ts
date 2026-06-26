@@ -26,6 +26,8 @@ export interface Budget {
   categoryId: number
   period: string
   amount: number
+  /** Fraction of `amount` at which the budget is "near" its limit (0–1). */
+  alertThreshold: number
 }
 
 export interface Transaction {
@@ -62,6 +64,7 @@ export interface NewBudget {
   categoryId: number
   period: string
   amount: number
+  alertThreshold: number
 }
 
 export interface NewTransaction {

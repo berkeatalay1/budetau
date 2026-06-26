@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Budget, NewBudget } from '../types'
-import { createBudget, listBudgets } from '../api'
+import { createBudget, deleteBudget, listBudgets, updateBudget } from '../api'
 
 export const useBudgetStore = defineStore('budget', () => {
   const data = ref<Budget[]>([])
@@ -26,5 +26,16 @@ export const useBudgetStore = defineStore('budget', () => {
     return created
   }
 
-  return { data, isLoading, error, fetchAll, add }
+  async function update(payload: Budget): Promise<Budget> {
+    const updated = await updateBudget(payload)
+    await fetchAll()
+    return updated
+  }
+
+  async function remove(id: number): Promise<void> {
+    await deleteBudget(id)
+    await fetchAll()
+  }
+
+  return { data, isLoading, error, fetchAll, add, update, remove }
 })
