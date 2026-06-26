@@ -247,7 +247,7 @@ function formatMonthLabel(ym: string): string {
 </script>
 
 <template>
-  <section class="flex flex-col h-full">
+  <section class="flex flex-col h-full px-7 py-6">
     <!-- ── Header ──────────────────────────────────────────────────────────── -->
     <div class="flex items-center justify-between mb-[18px]">
       <div>

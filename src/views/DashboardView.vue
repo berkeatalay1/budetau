@@ -185,7 +185,7 @@ onMounted(async () => {
   </div>
 
   <!-- Populated state -->
-  <div v-else>
+  <div v-else class="px-7 py-6">
     <!-- Page header + month nav -->
     <div class="flex items-center justify-between mb-5">
       <div>
