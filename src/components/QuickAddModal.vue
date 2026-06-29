@@ -87,9 +87,6 @@ const dropdownItems = computed<DropdownItem[]>(() => {
   return items
 })
 
-/** Only 'parent' and 'child' items are keyboard-navigable (all are selectable). */
-const navigableItems = computed(() => dropdownItems.value)
-
 const selectedCategory = computed(() =>
   selectedCategoryId.value != null
     ? (categoryStore.data.find((c) => c.id === selectedCategoryId.value) ?? null)
@@ -122,7 +119,7 @@ function onCategoryKeydown(e: KeyboardEvent) {
     openAutocomplete()
     return
   }
-  const len = navigableItems.value.length
+  const len = dropdownItems.value.length
   if (e.key === 'ArrowDown') {
     e.preventDefault()
     highlightedIndex.value = (highlightedIndex.value + 1) % len
@@ -131,7 +128,7 @@ function onCategoryKeydown(e: KeyboardEvent) {
     highlightedIndex.value = (highlightedIndex.value - 1 + len) % len
   } else if (e.key === 'Enter' && len > 0) {
     e.preventDefault()
-    const item = navigableItems.value[highlightedIndex.value]
+    const item = dropdownItems.value[highlightedIndex.value]
     pickCategory(item.cat.id)
   } else if (e.key === 'Escape') {
     closeAutocomplete()
@@ -167,9 +164,7 @@ const submitLabel = computed(() => {
 const submitBtnClass = computed(() =>
   txType.value === 'income'
     ? 'bg-green text-card hover:bg-green/90'
-    : txType.value === 'transfer'
-      ? 'bg-accent text-card hover:bg-accent/90'
-      : 'bg-accent text-card hover:bg-accent/90',
+    : 'bg-accent text-card hover:bg-accent/90',
 )
 
 const amountBorderClass = computed(() =>
@@ -539,8 +534,7 @@ function closeAutocompleteDelayed() {
                       >To account</label
                     >
                     <div
-                      class="flex h-[42px] items-center justify-between rounded-control border bg-card px-3 ring-2 ring-accent/20"
-                      :class="transferAccountId ? 'border-accent' : 'border-accent'"
+                      class="flex h-[42px] items-center justify-between rounded-control border border-accent bg-card px-3 ring-2 ring-accent/20"
                     >
                       <select
                         v-model="transferAccountId"

@@ -70,26 +70,8 @@ fn run_migrations(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
-/// v2: per-budget alert threshold (fraction of the limit at which a budget is
-/// considered "near" — e.g. 0.9 = 90%). Added via ALTER so existing budgets
-/// keep working.
-fn migrate_v2(conn: &Connection) -> rusqlite::Result<()> {
-    conn.execute_batch(
-        "ALTER TABLE budgets ADD COLUMN alert_threshold REAL NOT NULL DEFAULT 0.9;",
-    )
-}
-
-/// v3: one level of category nesting. `parent_id` references another category
-/// (NULL = top-level). Spending in a sub-category rolls up to the parent's
-/// budget on the frontend.
-fn migrate_v3(conn: &Connection) -> rusqlite::Result<()> {
-    conn.execute_batch(
-        "ALTER TABLE categories ADD COLUMN parent_id INTEGER REFERENCES categories(id);",
-    )
-}
-
-/// The v1 schema. Money is always stored as INTEGER minor units (cents);
-/// never REAL, to avoid floating-point rounding errors.
+/// v1 schema: core tables. Money is always stored as INTEGER minor units
+/// (cents); never REAL, to avoid floating-point rounding errors.
 fn migrate_v1(conn: &Connection) -> rusqlite::Result<()> {
     conn.execute_batch(
         "
@@ -136,6 +118,24 @@ fn migrate_v1(conn: &Connection) -> rusqlite::Result<()> {
             transfer_account_id INTEGER REFERENCES accounts(id)
         );
         ",
+    )
+}
+
+/// v2: per-budget alert threshold (fraction of the limit at which a budget is
+/// considered "near" — e.g. 0.9 = 90%). Added via ALTER so existing budgets
+/// keep working.
+fn migrate_v2(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute_batch(
+        "ALTER TABLE budgets ADD COLUMN alert_threshold REAL NOT NULL DEFAULT 0.9;",
+    )
+}
+
+/// v3: one level of category nesting. `parent_id` references another category
+/// (NULL = top-level). Spending in a sub-category rolls up to the parent's
+/// budget on the frontend.
+fn migrate_v3(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute_batch(
+        "ALTER TABLE categories ADD COLUMN parent_id INTEGER REFERENCES categories(id);",
     )
 }
 

@@ -82,6 +82,14 @@ function onCategoryChange(val: string) {
   filterCategoryId.value = val === '' ? null : Number(val)
 }
 
+function onAccountChange(val: string) {
+  filterAccountId.value = val === '' ? null : Number(val)
+}
+
+function onTypeChange(val: string) {
+  filterType.value = val === '' ? null : val
+}
+
 // ─── Active filter chips ──────────────────────────────────────────────────────
 interface FilterChip {
   key: string
@@ -208,27 +216,17 @@ const groupedByDay = computed<DayGroup[]>(() => {
   })
 })
 
-// Day header: "Today · Tue, Jun 24" for today, "Mon, Jun 23" otherwise
+// Day header: "Today · Tue, Jun 24" / "Yesterday · Mon, Jun 23" / "Sat, Jun 21"
+const shortDateFmt = new Intl.DateTimeFormat('en-US', {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric',
+})
+
 function formatDayHeaderWithToday(date: string): string {
   const base = formatDayHeader(date)
-  if (base === 'Today') {
-    // append the short weekday + date
-    const d = new Date(date + 'T00:00:00')
-    const short = new Intl.DateTimeFormat('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    }).format(d)
-    return `Today · ${short}`
-  }
-  if (base === 'Yesterday') {
-    const d = new Date(date + 'T00:00:00')
-    const short = new Intl.DateTimeFormat('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    }).format(d)
-    return `Yesterday · ${short}`
+  if (base === 'Today' || base === 'Yesterday') {
+    return `${base} · ${shortDateFmt.format(new Date(date + 'T00:00:00'))}`
   }
   return base
 }
@@ -379,12 +377,7 @@ function formatMonthLabel(ym: string): string {
         <select
           :value="filterAccountId ?? ''"
           class="h-10 rounded-control border border-border bg-card pl-3 pr-8 text-[13px] font-medium text-secondary appearance-none cursor-pointer hover:border-secondary/50 transition-colors outline-none"
-          @change="
-            filterAccountId =
-              ($event.target as HTMLSelectElement).value === ''
-                ? null
-                : Number(($event.target as HTMLSelectElement).value)
-          "
+          @change="onAccountChange(($event.target as HTMLSelectElement).value)"
         >
           <option value="">All accounts</option>
           <option v-for="a in accountStore.data" :key="a.id" :value="a.id">
@@ -402,12 +395,7 @@ function formatMonthLabel(ym: string): string {
         <select
           :value="filterType ?? ''"
           class="h-10 rounded-control border border-border bg-card pl-3 pr-8 text-[13px] font-medium text-secondary appearance-none cursor-pointer hover:border-secondary/50 transition-colors outline-none"
-          @change="
-            filterType =
-              ($event.target as HTMLSelectElement).value === ''
-                ? null
-                : ($event.target as HTMLSelectElement).value
-          "
+          @change="onTypeChange(($event.target as HTMLSelectElement).value)"
         >
           <option value="">Type</option>
           <option value="expense">Expense</option>

@@ -121,7 +121,7 @@ function handleSave() {
           <label class="text-caption text-secondary">Type</label>
           <div class="flex gap-2">
             <button
-              v-for="t in ['expense', 'income', 'transfer']"
+              v-for="t in ['expense', 'income', 'transfer'] as const"
               :key="t"
               type="button"
               :class="[

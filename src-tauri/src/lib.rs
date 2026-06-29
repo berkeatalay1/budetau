@@ -8,15 +8,9 @@ mod db;
 
 /// Tauri managed state holding the single SQLite connection.
 ///
-/// Task 1D's CRUD commands access this via `tauri::State<'_, DbState>`
-/// and lock the inner `Mutex<Connection>` to run queries.
+/// CRUD commands access this via `tauri::State<'_, DbState>` and lock the
+/// inner `Mutex<Connection>` to run queries.
 pub struct DbState(pub Mutex<Connection>);
-
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -32,7 +26,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            greet,
             commands::get_db_path,
             commands::list_accounts,
             commands::list_categories,

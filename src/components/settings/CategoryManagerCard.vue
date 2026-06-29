@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useCategoryStore } from '../../stores/category'
 import type { Category, NewCategory } from '../../types'
 import CategoryFormModal from './CategoryFormModal.vue'
@@ -17,9 +17,7 @@ const actionError = ref<string | null>(null)
 const deleteError = ref<string | null>(null)
 
 // ── Profile id — derive from existing data or fall back to 1 ─────────────────
-function getProfileId(): number {
-  return categoryStore.data[0]?.profileId ?? 1
-}
+const profileId = computed(() => categoryStore.data[0]?.profileId ?? 1)
 
 // ── Fetch on mount if empty ───────────────────────────────────────────────────
 onMounted(async () => {
@@ -123,53 +121,37 @@ function typeBadgeClass(type: string): string {
       Organise your spending and income with categories and sub-categories.
     </p>
 
-    <!-- Action error banner (add / edit) -->
-    <div
-      v-if="actionError"
-      class="mb-3 flex items-center gap-2 rounded-[9px] border border-red/40 bg-red/10 px-[13px] py-[10px]"
-      role="alert"
+    <!-- Error banners: action (add/edit) and delete -->
+    <template
+      v-for="[msg, dismiss] in [
+        [actionError, dismissActionError],
+        [deleteError, dismissDeleteError],
+      ] as [string | null, () => void][]"
+      :key="msg"
     >
-      <span class="flex-1 text-[12px] leading-relaxed text-red">{{ actionError }}</span>
-      <button
-        type="button"
-        class="text-red/60 hover:text-red transition-colors"
-        aria-label="Dismiss error"
-        @click="dismissActionError"
+      <div
+        v-if="msg"
+        class="mb-3 flex items-center gap-2 rounded-[9px] border border-red/40 bg-red/10 px-[13px] py-[10px]"
+        role="alert"
       >
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path
-            d="M9 3L3 9M3 3l6 6"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-          />
-        </svg>
-      </button>
-    </div>
-
-    <!-- Delete error banner -->
-    <div
-      v-if="deleteError"
-      class="mb-3 flex items-center gap-2 rounded-[9px] border border-red/40 bg-red/10 px-[13px] py-[10px]"
-      role="alert"
-    >
-      <span class="flex-1 text-[12px] leading-relaxed text-red">{{ deleteError }}</span>
-      <button
-        type="button"
-        class="text-red/60 hover:text-red transition-colors"
-        aria-label="Dismiss error"
-        @click="dismissDeleteError"
-      >
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path
-            d="M9 3L3 9M3 3l6 6"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-          />
-        </svg>
-      </button>
-    </div>
+        <span class="flex-1 text-[12px] leading-relaxed text-red">{{ msg }}</span>
+        <button
+          type="button"
+          class="text-red/60 hover:text-red transition-colors"
+          aria-label="Dismiss error"
+          @click="dismiss"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path
+              d="M9 3L3 9M3 3l6 6"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </template>
 
     <!-- Loading state -->
     <div v-if="categoryStore.isLoading" class="py-4 text-center text-[13px] text-secondary">
@@ -298,7 +280,7 @@ function typeBadgeClass(type: string): string {
     v-if="showFormModal"
     :category="editingCategory"
     :top-level-categories="categoryStore.topLevel"
-    :profile-id="getProfileId()"
+    :profile-id="profileId"
     @save="handleSave"
     @cancel="closeForm"
   />

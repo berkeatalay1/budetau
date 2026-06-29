@@ -24,8 +24,8 @@ const netIsPositive = computed(() => net.value >= 0)
           Net this month
         </div>
         <div
-          class="num font-bold leading-none tracking-[-0.02em]"
-          :class="netIsPositive ? 'text-green text-[38px]' : 'text-red text-[38px]'"
+          class="num text-[38px] font-bold leading-none tracking-[-0.02em]"
+          :class="netIsPositive ? 'text-green' : 'text-red'"
         >
           {{ netIsPositive ? '+' : '' }}{{ formatCents(net) }}
         </div>

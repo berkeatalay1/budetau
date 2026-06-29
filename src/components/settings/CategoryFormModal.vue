@@ -106,18 +106,6 @@ function handleSave() {
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') emit('cancel')
 }
-
-function selectColor(c: string) {
-  colorCode.value = c
-}
-
-function selectType(t: 'expense' | 'income') {
-  type.value = t
-}
-
-function selectParent(id: number | null) {
-  parentId.value = id
-}
 </script>
 
 <template>
@@ -193,7 +181,7 @@ function selectParent(id: number | null) {
               "
               :aria-label="`Color ${swatch}`"
               :aria-pressed="colorCode === swatch"
-              @click="selectColor(swatch)"
+              @click="colorCode = swatch"
             />
             <!-- Custom color input -->
             <label
@@ -231,7 +219,7 @@ function selectParent(id: number | null) {
                   : 'text-secondary hover:text-primary'
               "
               :aria-pressed="type === 'expense'"
-              @click="selectType('expense')"
+              @click="type = 'expense'"
             >
               Expense
             </button>
@@ -244,7 +232,7 @@ function selectParent(id: number | null) {
                   : 'text-secondary hover:text-primary'
               "
               :aria-pressed="type === 'income'"
-              @click="selectType('income')"
+              @click="type = 'income'"
             >
               Income
             </button>
@@ -262,11 +250,10 @@ function selectParent(id: number | null) {
             class="rounded-control border border-border bg-bg px-3 h-10 text-sm text-primary outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-shadow"
             :value="parentId ?? ''"
             @change="
-              selectParent(
+              parentId =
                 ($event.target as HTMLSelectElement).value === ''
                   ? null
-                  : Number(($event.target as HTMLSelectElement).value),
-              )
+                  : Number(($event.target as HTMLSelectElement).value)
             "
           >
             <option value="">No parent (top-level)</option>

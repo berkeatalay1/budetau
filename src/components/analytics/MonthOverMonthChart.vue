@@ -36,22 +36,15 @@ const months = last6Months()
 
 const netData = computed(() =>
   months.map((m) => {
-    const income = props.transactions
-      .filter((tx) => {
-        if (tx.type !== 'income') return false
-        const d = new Date(tx.date + 'T00:00:00')
-        return d.getFullYear() === m.year && d.getMonth() === m.month
-      })
-      .reduce((sum, tx) => sum + tx.amount / 100, 0)
-
-    const expense = props.transactions
-      .filter((tx) => {
-        if (tx.type !== 'expense') return false
-        const d = new Date(tx.date + 'T00:00:00')
-        return d.getFullYear() === m.year && d.getMonth() === m.month
-      })
-      .reduce((sum, tx) => sum + tx.amount / 100, 0)
-
+    let income = 0
+    let expense = 0
+    for (const tx of props.transactions) {
+      if (tx.type !== 'income' && tx.type !== 'expense') continue
+      const d = new Date(tx.date + 'T00:00:00')
+      if (d.getFullYear() !== m.year || d.getMonth() !== m.month) continue
+      if (tx.type === 'income') income += tx.amount / 100
+      else expense += tx.amount / 100
+    }
     return Math.round((income - expense) * 100) / 100
   }),
 )
