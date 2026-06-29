@@ -29,11 +29,66 @@ const showDetails = ref(false)
 const autocompleteOpen = ref(false)
 const highlightedIndex = ref(0)
 
-const filteredCategories = computed(() => {
+/**
+ * A flat list of items to render in the dropdown.
+ * Each item is either a 'group' header (non-keyboard-navigable, but still
+ * selectable because top-level categories are valid targets) or a 'child'
+ * entry indented beneath its parent.
+ *
+ * When the user is filtering (query non-empty):
+ *   - Matches against both parent and child names.
+ *   - If a child matches, its parent label is shown above it for context.
+ *   - If only a parent matches, it appears alone (no indent).
+ */
+type DropdownItem =
+  | { kind: 'parent'; cat: (typeof categoryStore.data)[number] }
+  | { kind: 'child'; cat: (typeof categoryStore.data)[number] }
+
+const dropdownItems = computed<DropdownItem[]>(() => {
   const q = categoryQuery.value.trim().toLowerCase()
-  if (!q) return categoryStore.data.slice(0, 8)
-  return categoryStore.data.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 8)
+
+  if (!q) {
+    // Unfiltered: hierarchical view — each top-level followed by its children
+    const items: DropdownItem[] = []
+    for (const parent of categoryStore.topLevel) {
+      items.push({ kind: 'parent', cat: parent })
+      for (const child of categoryStore.childrenOf(parent.id)) {
+        items.push({ kind: 'child', cat: child })
+      }
+    }
+    return items
+  }
+
+  // Filtered: collect matches; include parent header when a child matches
+  const items: DropdownItem[] = []
+  const addedParentIds = new Set<number>()
+
+  for (const parent of categoryStore.topLevel) {
+    const parentMatches = parent.name.toLowerCase().includes(q)
+    const children = categoryStore.childrenOf(parent.id)
+    const matchingChildren = children.filter((c) => c.name.toLowerCase().includes(q))
+
+    if (parentMatches || matchingChildren.length > 0) {
+      if (!addedParentIds.has(parent.id)) {
+        items.push({ kind: 'parent', cat: parent })
+        addedParentIds.add(parent.id)
+      }
+      // If parent matched, add all children; else only matching children
+      const childrenToShow = parentMatches ? children : matchingChildren
+      for (const child of childrenToShow) {
+        items.push({ kind: 'child', cat: child })
+      }
+    }
+  }
+
+  // Also include top-level-only categories that were orphaned (no children)
+  // — these were already added above when parentMatches, so no duplicates.
+
+  return items
 })
+
+/** Only 'parent' and 'child' items are keyboard-navigable (all are selectable). */
+const navigableItems = computed(() => dropdownItems.value)
 
 const selectedCategory = computed(() =>
   selectedCategoryId.value != null
@@ -50,9 +105,9 @@ function closeAutocomplete() {
   autocompleteOpen.value = false
 }
 
-function pickCategory(id: number, name: string) {
+function pickCategory(id: number) {
   selectedCategoryId.value = id
-  categoryQuery.value = name
+  categoryQuery.value = categoryStore.displayPath(id)
   closeAutocomplete()
 }
 
@@ -67,7 +122,7 @@ function onCategoryKeydown(e: KeyboardEvent) {
     openAutocomplete()
     return
   }
-  const len = filteredCategories.value.length
+  const len = navigableItems.value.length
   if (e.key === 'ArrowDown') {
     e.preventDefault()
     highlightedIndex.value = (highlightedIndex.value + 1) % len
@@ -76,8 +131,8 @@ function onCategoryKeydown(e: KeyboardEvent) {
     highlightedIndex.value = (highlightedIndex.value - 1 + len) % len
   } else if (e.key === 'Enter' && len > 0) {
     e.preventDefault()
-    const cat = filteredCategories.value[highlightedIndex.value]
-    pickCategory(cat.id, cat.name)
+    const item = navigableItems.value[highlightedIndex.value]
+    pickCategory(item.cat.id)
   } else if (e.key === 'Escape') {
     closeAutocomplete()
   }
@@ -168,7 +223,11 @@ async function submit() {
     }
     await transactionStore.add(payload)
     const catName =
-      selectedCategory.value?.name ?? (txType.value === 'transfer' ? 'transfer' : 'transaction')
+      selectedCategoryId.value != null
+        ? categoryStore.displayPath(selectedCategoryId.value)
+        : txType.value === 'transfer'
+          ? 'transfer'
+          : 'transaction'
     showToast(`✓ Added ${formatCents(amountCents.value)} to ${catName}`)
     quickAdd.close()
   } catch (err) {
@@ -348,28 +407,51 @@ function closeAutocompleteDelayed() {
                   />
                 </div>
 
-                <!-- Dropdown -->
+                <!-- Hierarchical Dropdown -->
                 <div
-                  v-if="autocompleteOpen && filteredCategories.length > 0"
-                  class="absolute left-0 right-0 top-[72px] z-[110] rounded-[10px] border border-border bg-card p-[5px] shadow-[0_12px_28px_rgba(16,24,40,.16)]"
+                  v-if="autocompleteOpen && dropdownItems.length > 0"
+                  class="absolute left-0 right-0 top-[72px] z-[110] max-h-[260px] overflow-y-auto rounded-[10px] border border-border bg-card p-[5px] shadow-[0_12px_28px_rgba(16,24,40,.16)]"
                 >
-                  <button
-                    v-for="(cat, i) in filteredCategories"
-                    :key="cat.id"
-                    type="button"
-                    class="flex w-full items-center gap-[9px] rounded-[7px] px-[10px] py-[9px] text-left transition-colors"
-                    :class="i === highlightedIndex ? 'bg-accent/10' : 'hover:bg-bg'"
-                    @mousedown.prevent="pickCategory(cat.id, cat.name)"
-                  >
-                    <span
-                      class="h-[10px] w-[10px] flex-none rounded-full"
-                      :style="{ background: cat.colorCode ?? '#9ca3af' }"
-                    />
-                    <span class="text-[13px] font-medium text-primary">{{ cat.name }}</span>
-                    <span v-if="i === highlightedIndex" class="ml-auto text-[11px] text-secondary"
-                      >↵</span
+                  <template v-for="(item, i) in dropdownItems" :key="`${item.kind}-${item.cat.id}`">
+                    <!-- Parent / top-level category row -->
+                    <button
+                      v-if="item.kind === 'parent'"
+                      type="button"
+                      class="flex w-full items-center gap-[9px] rounded-[7px] px-[10px] py-[8px] text-left transition-colors"
+                      :class="i === highlightedIndex ? 'bg-accent/10' : 'hover:bg-bg'"
+                      @mousedown.prevent="pickCategory(item.cat.id)"
                     >
-                  </button>
+                      <span
+                        class="h-[9px] w-[9px] flex-none rounded-full"
+                        :style="{ background: item.cat.colorCode ?? '#9ca3af' }"
+                      />
+                      <span class="text-[13px] font-semibold text-primary">{{
+                        item.cat.name
+                      }}</span>
+                      <span v-if="i === highlightedIndex" class="ml-auto text-[11px] text-secondary"
+                        >↵</span
+                      >
+                    </button>
+
+                    <!-- Child / sub-category row (indented) -->
+                    <button
+                      v-else
+                      type="button"
+                      class="flex w-full items-center gap-[9px] rounded-[7px] py-[7px] pl-[26px] pr-[10px] text-left transition-colors"
+                      :class="i === highlightedIndex ? 'bg-accent/10' : 'hover:bg-bg'"
+                      @mousedown.prevent="pickCategory(item.cat.id)"
+                    >
+                      <span class="text-[11px] text-secondary/60">›</span>
+                      <span
+                        class="h-[8px] w-[8px] flex-none rounded-full"
+                        :style="{ background: item.cat.colorCode ?? '#9ca3af' }"
+                      />
+                      <span class="text-[13px] font-medium text-primary">{{ item.cat.name }}</span>
+                      <span v-if="i === highlightedIndex" class="ml-auto text-[11px] text-secondary"
+                        >↵</span
+                      >
+                    </button>
+                  </template>
                 </div>
               </div>
 

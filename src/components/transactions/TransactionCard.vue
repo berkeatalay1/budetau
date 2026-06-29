@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import type { Transaction, Category, Account } from '../../types'
 import { formatCents, formatSignedCents } from '../../lib/format'
+import { useCategoryStore } from '../../stores/category'
 
 const props = defineProps<{
   transaction: Transaction
@@ -15,18 +16,20 @@ const emit = defineEmits<{
   delete: [t: Transaction]
 }>()
 
+const categoryStore = useCategoryStore()
+
 const isHovered = ref(false)
 
-// Subtitle line: "Category · Account" or "Transfer · From → To"
+// Subtitle line: "Parent › Sub · Account" for sub-categories, "Category · Account" for top-level, or transfer info
 const subtitle = computed(() => {
   if (props.transaction.type === 'transfer') {
     const from = props.account?.name ?? '?'
     const to = props.toAccount?.name ?? '?'
     return `Transfer · ${from} → ${to}`
   }
-  const cat = props.category?.name ?? 'Uncategorized'
+  const catPath = categoryStore.displayPath(props.transaction.categoryId)
   const acc = props.account?.name ?? '?'
-  return `${cat} · ${acc}`
+  return `${catPath} · ${acc}`
 })
 
 // Display label for the category icon: first letter of category name, or ⇄ for transfers
@@ -35,7 +38,7 @@ const iconLabel = computed(() => {
   return (props.category?.name?.[0] ?? '?').toUpperCase()
 })
 
-// Icon background: category colorCode (data-driven, inline style), neutral for transfers
+// Icon background: sub-category's own colorCode (data-driven, inline style), neutral for transfers
 const iconColor = computed(() => {
   if (props.transaction.type === 'transfer') return null
   return props.category?.colorCode ?? null

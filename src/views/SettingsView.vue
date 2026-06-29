@@ -8,6 +8,7 @@ import type { Account } from '../types'
 import AccountFormModal from '../components/settings/AccountFormModal.vue'
 import EditAccountModal from '../components/settings/EditAccountModal.vue'
 import ConfirmDialog from '../components/transactions/ConfirmDialog.vue'
+import CategoryManagerCard from '../components/settings/CategoryManagerCard.vue'
 import { formatCents } from '../lib/format'
 
 const themeStore = useThemeStore()
@@ -397,6 +398,9 @@ async function confirmDelete() {
           </li>
         </ul>
       </div>
+
+      <!-- ── Categories card ───────────────────────────────────────────── -->
+      <CategoryManagerCard />
 
       <!-- ── Backup & restore card ──────────────────────────────────────── -->
       <div class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card">

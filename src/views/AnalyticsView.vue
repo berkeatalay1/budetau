@@ -85,7 +85,13 @@ const currentMonthLabel = computed(() =>
             </h2>
             <p class="text-[12px] text-secondary mt-[3px]">{{ currentMonthLabel }}</p>
           </div>
-          <SpendingDonutChart :transactions="txStore.data" :category-by-id="categoryStore.byId" />
+          <SpendingDonutChart
+            :transactions="txStore.data"
+            :category-by-id="categoryStore.byId"
+            :top-level="categoryStore.topLevel"
+            :children-of="categoryStore.childrenOf"
+            :descendant-ids="categoryStore.descendantIds"
+          />
         </div>
 
         <!-- Month-over-month net -->

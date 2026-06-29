@@ -37,10 +37,44 @@ watch(
   },
 )
 
-// Filter categories by selected type
-const filteredCategories = computed(() =>
-  categoryStore.data.filter((c) => c.type === form.value.type || form.value.type === 'transfer'),
-)
+/**
+ * Hierarchical list of categories for the picker.
+ * Each entry carries the category id, a display label (with › for subs),
+ * and an indent flag so we can style subs.
+ */
+interface CategoryOption {
+  id: number
+  label: string
+  indented: boolean
+}
+
+const hierarchicalCategories = computed<CategoryOption[]>(() => {
+  const type = form.value.type
+  const options: CategoryOption[] = []
+
+  for (const parent of categoryStore.topLevel) {
+    // Skip parents whose type doesn't match (when not a transfer)
+    if (type !== 'transfer' && parent.type !== type) continue
+
+    options.push({ id: parent.id, label: parent.name, indented: false })
+
+    for (const child of categoryStore.childrenOf(parent.id)) {
+      if (type !== 'transfer' && child.type !== type) continue
+      options.push({ id: child.id, label: child.name, indented: true })
+    }
+  }
+
+  // Also include any sub-categories whose parent is a different type
+  // (shouldn't normally happen, but safety net so they're selectable)
+  const includedIds = new Set(options.map((o) => o.id))
+  for (const cat of categoryStore.data) {
+    if (includedIds.has(cat.id)) continue
+    if (type !== 'transfer' && cat.type !== type) continue
+    options.push({ id: cat.id, label: categoryStore.displayPath(cat.id), indented: false })
+  }
+
+  return options
+})
 
 function handleSave() {
   emit('save', {
@@ -170,7 +204,7 @@ function handleSave() {
           </select>
         </div>
 
-        <!-- Category (not for transfers) -->
+        <!-- Category (not for transfers) — hierarchical picker -->
         <div v-if="form.type !== 'transfer'" class="flex flex-col gap-1.5">
           <label for="edit-category" class="text-caption text-secondary">Category</label>
           <select
@@ -179,8 +213,13 @@ function handleSave() {
             class="rounded-control border border-border bg-bg px-3 h-10 text-sm text-primary outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-shadow"
           >
             <option :value="null">— uncategorized —</option>
-            <option v-for="c in filteredCategories" :key="c.id" :value="c.id">
-              {{ c.name }}
+            <option
+              v-for="opt in hierarchicalCategories"
+              :key="opt.id"
+              :value="opt.id"
+              :class="opt.indented ? 'pl-4' : ''"
+            >
+              {{ opt.indented ? '   › ' : '' }}{{ opt.label }}
             </option>
           </select>
         </div>

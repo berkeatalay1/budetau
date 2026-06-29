@@ -27,6 +27,7 @@ const searchQuery = ref('')
 const filterAccountId = ref<number | null>(null)
 const filterType = ref<string | null>(null)
 const filterMonth = ref<string>('') // 'YYYY-MM' or ''
+const filterCategoryId = ref<number | null>(null) // null = all categories
 
 // Build month options from all transaction dates
 const monthOptions = computed(() => {
@@ -52,6 +53,35 @@ function onMonthChange(val: string) {
   filterMonth.value = val
 }
 
+// ─── Category filter options (hierarchical) ───────────────────────────────────
+interface CategoryFilterOption {
+  id: number
+  label: string
+  indented: boolean
+}
+
+const categoryFilterOptions = computed<CategoryFilterOption[]>(() => {
+  const options: CategoryFilterOption[] = []
+  for (const parent of categoryStore.topLevel) {
+    options.push({ id: parent.id, label: parent.name, indented: false })
+    for (const child of categoryStore.childrenOf(parent.id)) {
+      options.push({ id: child.id, label: child.name, indented: true })
+    }
+  }
+  // Include orphaned sub-categories (parent not top-level, e.g. edge case)
+  const includedIds = new Set(options.map((o) => o.id))
+  for (const cat of categoryStore.data) {
+    if (!includedIds.has(cat.id)) {
+      options.push({ id: cat.id, label: categoryStore.displayPath(cat.id), indented: false })
+    }
+  }
+  return options
+})
+
+function onCategoryChange(val: string) {
+  filterCategoryId.value = val === '' ? null : Number(val)
+}
+
 // ─── Active filter chips ──────────────────────────────────────────────────────
 interface FilterChip {
   key: string
@@ -65,6 +95,16 @@ const activeChips = computed<FilterChip[]>(() => {
     const acc = accountStore.data.find((a) => a.id === filterAccountId.value)
     if (acc) chips.push({ key: 'account', label: acc.name })
   }
+  if (filterCategoryId.value !== null) {
+    const cat = categoryStore.byId.get(filterCategoryId.value)
+    if (cat) {
+      chips.push({
+        key: 'category',
+        label: categoryStore.displayPath(filterCategoryId.value),
+        colorCode: cat.colorCode,
+      })
+    }
+  }
   if (filterType.value) {
     chips.push({ key: 'type', label: capitalize(filterType.value) })
   }
@@ -76,6 +116,7 @@ const activeChips = computed<FilterChip[]>(() => {
 
 function removeChip(key: string) {
   if (key === 'account') filterAccountId.value = null
+  if (key === 'category') filterCategoryId.value = null
   if (key === 'type') filterType.value = null
   if (key === 'month') {
     filterMonth.value = ''
@@ -86,6 +127,7 @@ function removeChip(key: string) {
 function clearAll() {
   searchQuery.value = ''
   filterAccountId.value = null
+  filterCategoryId.value = null
   filterType.value = null
   filterMonth.value = ''
   hasAutoSetMonth.value = true
@@ -95,6 +137,7 @@ const hasActiveFilters = computed(
   () =>
     !!searchQuery.value ||
     filterAccountId.value !== null ||
+    filterCategoryId.value !== null ||
     !!filterType.value ||
     (hasAutoSetMonth.value && !!filterMonth.value),
 )
@@ -103,6 +146,13 @@ const hasActiveFilters = computed(
 const filtered = computed<Transaction[]>(() => {
   const q = searchQuery.value.trim().toLowerCase()
   const month = hasAutoSetMonth.value ? filterMonth.value : effectiveMonth.value
+
+  // Resolve the set of category ids that pass the category filter.
+  // Selecting a parent matches all its descendants; selecting a sub matches only that sub.
+  let catIds: Set<number> | null = null
+  if (filterCategoryId.value !== null) {
+    catIds = new Set(categoryStore.descendantIds(filterCategoryId.value))
+  }
 
   return transactionStore.data.filter((t) => {
     // Search: note or category name
@@ -113,6 +163,10 @@ const filtered = computed<Transaction[]>(() => {
     }
     // Account
     if (filterAccountId.value !== null && t.accountId !== filterAccountId.value) return false
+    // Category (hierarchy-aware)
+    if (catIds !== null) {
+      if (t.categoryId === null || !catIds.has(t.categoryId)) return false
+    }
     // Type
     if (filterType.value && t.type !== filterType.value) return false
     // Month
@@ -300,6 +354,24 @@ function formatMonthLabel(ym: string): string {
             />
           </svg>
         </button>
+      </div>
+
+      <!-- Category filter (hierarchy-aware) -->
+      <div class="relative">
+        <select
+          :value="filterCategoryId ?? ''"
+          class="h-10 rounded-control border border-border bg-card pl-3 pr-8 text-[13px] font-medium text-secondary appearance-none cursor-pointer hover:border-secondary/50 transition-colors outline-none"
+          @change="onCategoryChange(($event.target as HTMLSelectElement).value)"
+        >
+          <option value="">All categories</option>
+          <option v-for="opt in categoryFilterOptions" :key="opt.id" :value="opt.id">
+            {{ opt.indented ? '   › ' : '' }}{{ opt.label }}
+          </option>
+        </select>
+        <span
+          class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-secondary text-[10px]"
+          >▾</span
+        >
       </div>
 
       <!-- Account filter -->
