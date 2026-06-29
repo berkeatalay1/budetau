@@ -87,8 +87,10 @@ interface BudgetRow {
 const budgetRows = computed<BudgetRow[]>(() => {
   return budgetStore.data.map((b) => {
     const category = categoryStore.byId.get(b.categoryId)
+    // Roll up: a budget counts spending in its category and any sub-category.
+    const catIds = new Set(categoryStore.descendantIds(b.categoryId))
     const spent = monthTransactions.value
-      .filter((tx) => tx.type === 'expense' && tx.categoryId === b.categoryId)
+      .filter((tx) => tx.type === 'expense' && tx.categoryId != null && catIds.has(tx.categoryId))
       .reduce((sum, tx) => sum + tx.amount, 0)
     const pct = b.amount > 0 ? spent / b.amount : 0
     const threshold = b.alertThreshold

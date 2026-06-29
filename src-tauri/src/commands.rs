@@ -42,6 +42,8 @@ pub struct Category {
     pub name: String,
     pub color_code: Option<String>,
     pub r#type: String,
+    /// Parent category id, or None for a top-level category.
+    pub parent_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,6 +93,8 @@ pub struct NewCategory {
     pub name: String,
     pub color_code: Option<String>,
     pub r#type: String,
+    #[serde(default)]
+    pub parent_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -143,6 +147,7 @@ fn map_category(row: &rusqlite::Row<'_>) -> rusqlite::Result<Category> {
         name: row.get("name")?,
         color_code: row.get("color_code")?,
         r#type: row.get("type")?,
+        parent_id: row.get("parent_id")?,
     })
 }
 
@@ -180,7 +185,7 @@ fn select_accounts(conn: &Connection) -> rusqlite::Result<Vec<Account>> {
 
 fn select_categories(conn: &Connection) -> rusqlite::Result<Vec<Category>> {
     let mut stmt = conn.prepare(
-        "SELECT id, profile_id, name, color_code, type FROM categories ORDER BY id;",
+        "SELECT id, profile_id, name, color_code, type, parent_id FROM categories ORDER BY id;",
     )?;
     let rows = stmt.query_map([], map_category)?;
     rows.collect()
@@ -214,7 +219,7 @@ fn fetch_account(conn: &Connection, id: i64) -> rusqlite::Result<Account> {
 
 fn fetch_category(conn: &Connection, id: i64) -> rusqlite::Result<Category> {
     conn.query_row(
-        "SELECT id, profile_id, name, color_code, type FROM categories WHERE id = ?1;",
+        "SELECT id, profile_id, name, color_code, type, parent_id FROM categories WHERE id = ?1;",
         params![id],
         map_category,
     )
@@ -249,10 +254,46 @@ fn insert_account(conn: &Connection, new: &NewAccount) -> rusqlite::Result<Accou
 
 fn insert_category(conn: &Connection, new: &NewCategory) -> rusqlite::Result<Category> {
     conn.execute(
-        "INSERT INTO categories (profile_id, name, color_code, type) VALUES (?1, ?2, ?3, ?4);",
-        params![new.profile_id, new.name, new.color_code, new.r#type],
+        "INSERT INTO categories (profile_id, name, color_code, type, parent_id) \
+         VALUES (?1, ?2, ?3, ?4, ?5);",
+        params![new.profile_id, new.name, new.color_code, new.r#type, new.parent_id],
     )?;
     fetch_category(conn, conn.last_insert_rowid())
+}
+
+fn update_category_logic(conn: &Connection, c: &Category) -> rusqlite::Result<Category> {
+    conn.execute(
+        "UPDATE categories SET name = ?1, color_code = ?2, type = ?3, parent_id = ?4 WHERE id = ?5;",
+        params![c.name, c.color_code, c.r#type, c.parent_id, c.id],
+    )?;
+    fetch_category(conn, c.id)
+}
+
+/// Delete a category, refusing if it still has sub-categories or any
+/// transaction references it (which would orphan rows / break the FK).
+fn delete_category_logic(conn: &Connection, id: i64) -> rusqlite::Result<()> {
+    let children: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM categories WHERE parent_id = ?1;",
+        params![id],
+        |row| row.get(0),
+    )?;
+    if children > 0 {
+        return Err(rusqlite::Error::InvalidParameterName(format!(
+            "category has {children} sub-categories; remove or reparent them first"
+        )));
+    }
+    let txns: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM transactions WHERE category_id = ?1;",
+        params![id],
+        |row| row.get(0),
+    )?;
+    if txns > 0 {
+        return Err(rusqlite::Error::InvalidParameterName(format!(
+            "category is used by {txns} transaction(s); recategorize them first"
+        )));
+    }
+    conn.execute("DELETE FROM categories WHERE id = ?1;", params![id])?;
+    Ok(())
 }
 
 fn insert_budget(conn: &Connection, new: &NewBudget) -> rusqlite::Result<Budget> {
@@ -539,6 +580,21 @@ pub fn create_category(
 }
 
 #[tauri::command]
+pub fn update_category(
+    state: tauri::State<'_, DbState>,
+    category: Category,
+) -> Result<Category, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    update_category_logic(&conn, &category).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_category(state: tauri::State<'_, DbState>, id: i64) -> Result<(), String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    delete_category_logic(&conn, id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn create_budget(
     state: tauri::State<'_, DbState>,
     budget: NewBudget,
@@ -738,6 +794,7 @@ mod tests {
                 name: "Utilities".into(),
                 color_code: Some("#888888".into()),
                 r#type: "expense".into(),
+                parent_id: None,
             },
         )
         .unwrap();
@@ -869,6 +926,7 @@ mod tests {
                 name: "Fun".into(),
                 color_code: None,
                 r#type: "expense".into(),
+                parent_id: None,
             },
         )
         .unwrap();
@@ -937,5 +995,44 @@ mod tests {
         )
         .unwrap();
         delete_account_logic(&conn, spare.id).unwrap();
+    }
+
+    #[test]
+    fn subcategory_parent_persists_and_delete_is_guarded() {
+        let (conn, _c, _s) = setup();
+        let profile_id = select_accounts(&conn).unwrap()[0].profile_id;
+
+        let parent = insert_category(
+            &conn,
+            &NewCategory {
+                profile_id,
+                name: "Dining Out".into(),
+                color_code: Some("#E57373".into()),
+                r#type: "expense".into(),
+                parent_id: None,
+            },
+        )
+        .unwrap();
+
+        let coffee = insert_category(
+            &conn,
+            &NewCategory {
+                profile_id,
+                name: "Coffee".into(),
+                color_code: None,
+                r#type: "expense".into(),
+                parent_id: Some(parent.id),
+            },
+        )
+        .unwrap();
+        assert_eq!(coffee.parent_id, Some(parent.id));
+
+        // Parent with a child can't be deleted.
+        assert!(delete_category_logic(&conn, parent.id).is_err());
+
+        // The leaf sub-category can.
+        delete_category_logic(&conn, coffee.id).unwrap();
+        // Now the parent (childless) can be deleted too.
+        delete_category_logic(&conn, parent.id).unwrap();
     }
 }

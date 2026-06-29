@@ -42,6 +42,8 @@ pub fn run() {
             commands::update_account,
             commands::delete_account,
             commands::create_category,
+            commands::update_category,
+            commands::delete_category,
             commands::create_budget,
             commands::update_budget,
             commands::delete_budget,

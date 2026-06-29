@@ -46,10 +46,13 @@ function selectPreset(preset: ThresholdPreset): void {
   }
 }
 
-// Expense categories that don't already have a budget.
+// Top-level expense categories that don't already have a budget. Budgets attach
+// to parents only; sub-category spending rolls up to them.
 const availableCategories = computed(() => {
   const budgeted = new Set(budgetStore.data.map((b) => b.categoryId))
-  return categoryStore.data.filter((c) => c.type === 'expense' && !budgeted.has(c.id))
+  return categoryStore.data.filter(
+    (c) => c.type === 'expense' && c.parentId == null && !budgeted.has(c.id),
+  )
 })
 
 const amountCents = computed(() => {

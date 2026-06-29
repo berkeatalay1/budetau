@@ -45,6 +45,11 @@ export const createTransaction = (transaction: NewTransaction): Promise<Transact
 
 // --- Update / delete -----------------------------------------------------
 
+export const updateCategory = (category: Category): Promise<Category> =>
+  invoke('update_category', { category })
+
+export const deleteCategory = (id: number): Promise<void> => invoke('delete_category', { id })
+
 export const updateAccount = (account: Account): Promise<Account> =>
   invoke('update_account', { account })
 

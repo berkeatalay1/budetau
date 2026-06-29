@@ -18,6 +18,8 @@ export interface Category {
   name: string
   colorCode: string | null
   type: string
+  /** Parent category id, or null for a top-level category. */
+  parentId: number | null
 }
 
 export interface Budget {
@@ -57,6 +59,7 @@ export interface NewCategory {
   name: string
   colorCode: string | null
   type: string
+  parentId?: number | null
 }
 
 export interface NewBudget {

@@ -24,7 +24,7 @@ pub fn resolve_db_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 /// The current schema version produced by [`init`].
-const CURRENT_SCHEMA_VERSION: i64 = 2;
+const CURRENT_SCHEMA_VERSION: i64 = 3;
 
 /// Initialise a connection: configure pragmas and run pending migrations.
 ///
@@ -58,6 +58,10 @@ fn run_migrations(conn: &Connection) -> rusqlite::Result<()> {
         migrate_v2(conn)?;
         conn.execute_batch("PRAGMA user_version = 2;")?;
     }
+    if version < 3 {
+        migrate_v3(conn)?;
+        conn.execute_batch("PRAGMA user_version = 3;")?;
+    }
 
     debug_assert_eq!(
         conn.query_row("PRAGMA user_version;", [], |row| row.get::<_, i64>(0))?,
@@ -72,6 +76,15 @@ fn run_migrations(conn: &Connection) -> rusqlite::Result<()> {
 fn migrate_v2(conn: &Connection) -> rusqlite::Result<()> {
     conn.execute_batch(
         "ALTER TABLE budgets ADD COLUMN alert_threshold REAL NOT NULL DEFAULT 0.9;",
+    )
+}
+
+/// v3: one level of category nesting. `parent_id` references another category
+/// (NULL = top-level). Spending in a sub-category rolls up to the parent's
+/// budget on the frontend.
+fn migrate_v3(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute_batch(
+        "ALTER TABLE categories ADD COLUMN parent_id INTEGER REFERENCES categories(id);",
     )
 }
 
@@ -153,11 +166,31 @@ pub fn seed_defaults(conn: &Connection) -> rusqlite::Result<()> {
             ("Transport", "#FFB74D", "expense"),
             ("Salary", "#4DB6AC", "income"),
         ];
-        let mut stmt = conn.prepare(
-            "INSERT INTO categories (profile_id, name, color_code, type) VALUES (?1, ?2, ?3, ?4);",
-        )?;
-        for (name, color, kind) in categories {
-            stmt.execute(rusqlite::params![pid, name, color, kind])?;
+        let mut dining_id: Option<i64> = None;
+        {
+            let mut stmt = conn.prepare(
+                "INSERT INTO categories (profile_id, name, color_code, type) VALUES (?1, ?2, ?3, ?4);",
+            )?;
+            for (name, color, kind) in categories {
+                stmt.execute(rusqlite::params![pid, name, color, kind])?;
+                if name == "Dining Out" {
+                    dining_id = Some(conn.last_insert_rowid());
+                }
+            }
+        }
+
+        // A couple of example sub-categories under Dining Out, so the one-level
+        // nesting is discoverable on first run.
+        if let Some(parent) = dining_id {
+            let subs: [(&str, &str); 3] =
+                [("Restaurants", "#EF9A9A"), ("Coffee", "#F48FB1"), ("Takeout", "#FFAB91")];
+            let mut sub_stmt = conn.prepare(
+                "INSERT INTO categories (profile_id, name, color_code, type, parent_id) \
+                 VALUES (?1, ?2, ?3, 'expense', ?4);",
+            )?;
+            for (name, color) in subs {
+                sub_stmt.execute(rusqlite::params![pid, name, color, parent])?;
+            }
         }
         pid
     } else {
@@ -313,7 +346,8 @@ mod tests {
         let categories: i64 = conn
             .query_row("SELECT COUNT(*) FROM categories;", [], |row| row.get(0))
             .unwrap();
-        assert_eq!(categories, 5, "seeding twice must not duplicate categories");
+        // 5 top-level + 3 example sub-categories under Dining Out.
+        assert_eq!(categories, 8, "seeding twice must not duplicate categories");
 
         let accounts: i64 = conn
             .query_row("SELECT COUNT(*) FROM accounts;", [], |row| row.get(0))
