@@ -16,6 +16,7 @@ pub struct DbState(pub Mutex<Connection>);
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let path =
                 db::resolve_db_path(app.handle()).map_err(Box::<dyn std::error::Error>::from)?;
@@ -43,6 +44,8 @@ pub fn run() {
             commands::create_transaction,
             commands::update_transaction,
             commands::delete_transaction,
+            commands::export_backup,
+            commands::restore_backup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

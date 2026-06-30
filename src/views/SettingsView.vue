@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { getDbPath } from '../api'
+import { open, save } from '@tauri-apps/plugin-dialog'
+import { exportBackup, getDbPath, restoreBackup } from '../api'
 import { useThemeStore } from '../stores/theme'
 import { useAccountStore } from '../stores/account'
 import type { ThemeMode } from '../stores/theme'
@@ -149,6 +150,99 @@ async function confirmDelete() {
         : String(err)
     // Keep dialog open so user sees the error, then close it
     deletingAccount.value = null
+  }
+}
+
+// ── Backup & restore ──────────────────────────────────────────────────────────
+const backupBusy = ref(false)
+const pendingRestorePath = ref<string | null>(null)
+const showRestoreConfirm = ref(false)
+
+// Self-contained result toast (mirrors the Quick-Add pattern; there is no
+// global toast host yet). `toastIsError` flips the icon/colour.
+const toastVisible = ref(false)
+const toastMessage = ref('')
+const toastIsError = ref(false)
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+function showToast(msg: string, isError = false) {
+  toastMessage.value = msg
+  toastIsError.value = isError
+  toastVisible.value = true
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    toastVisible.value = false
+  }, 3500)
+}
+
+function errMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
+}
+
+function defaultBackupName(): string {
+  // budetau-backup-YYYY-MM-DD.db
+  return `budetau-backup-${new Date().toISOString().slice(0, 10)}.db`
+}
+
+const dbFilters = [{ name: 'SQLite database', extensions: ['db'] }]
+
+async function handleExport() {
+  if (backupBusy.value) return
+  backupBusy.value = true
+  try {
+    const path = await save({
+      title: 'Export backup',
+      defaultPath: defaultBackupName(),
+      filters: dbFilters,
+    })
+    if (!path) return // user cancelled the picker
+    await exportBackup(path)
+    showToast('Backup exported successfully.')
+  } catch (err) {
+    showToast(`Export failed: ${errMessage(err)}`, true)
+  } finally {
+    backupBusy.value = false
+  }
+}
+
+// Pick the file first, then confirm — so the warning references a real action.
+async function requestRestore() {
+  if (backupBusy.value) return
+  try {
+    const picked = await open({
+      title: 'Restore from backup',
+      multiple: false,
+      directory: false,
+      filters: dbFilters,
+    })
+    if (!picked || Array.isArray(picked)) return // cancelled
+    pendingRestorePath.value = picked
+    showRestoreConfirm.value = true
+  } catch (err) {
+    showToast(`Restore failed: ${errMessage(err)}`, true)
+  }
+}
+
+function reloadApp() {
+  window.location.reload()
+}
+
+async function confirmRestore() {
+  const path = pendingRestorePath.value
+  showRestoreConfirm.value = false
+  if (!path) return
+  backupBusy.value = true
+  try {
+    await restoreBackup(path)
+    // The whole database was swapped underneath us; a reload is the simplest
+    // way to re-fetch every store against the restored data.
+    showToast('Database restored. Reloading…')
+    setTimeout(reloadApp, 1200)
+  } catch (err) {
+    showToast(`Restore failed: ${errMessage(err)}`, true)
+  } finally {
+    backupBusy.value = false
+    pendingRestorePath.value = null
   }
 }
 </script>
@@ -412,17 +506,17 @@ async function confirmDelete() {
         <div class="mb-[14px] flex gap-[10px]">
           <button
             type="button"
-            class="rounded-control bg-accent px-4 py-[10px] text-[13px] font-semibold text-card transition-colors hover:bg-accent/90 opacity-50 cursor-not-allowed"
-            disabled
-            title="Coming soon"
+            class="rounded-control bg-accent px-4 py-[10px] text-[13px] font-semibold text-card transition-colors hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="backupBusy"
+            @click="handleExport"
           >
             Export backup…
           </button>
           <button
             type="button"
-            class="rounded-control border border-border bg-card px-4 py-[10px] text-[13px] font-semibold text-primary transition-colors hover:bg-bg opacity-50 cursor-not-allowed"
-            disabled
-            title="Coming soon"
+            class="rounded-control border border-border bg-card px-4 py-[10px] text-[13px] font-semibold text-primary transition-colors hover:bg-bg disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="backupBusy"
+            @click="requestRestore"
           >
             Restore from file…
           </button>
@@ -470,4 +564,41 @@ async function confirmDelete() {
     @confirm="confirmDelete"
     @cancel="deletingAccount = null"
   />
+
+  <ConfirmDialog
+    v-if="showRestoreConfirm"
+    title="Restore from backup?"
+    message="This overwrites your current data with the selected backup. Budetau saves an automatic backup of your current database first."
+    confirm-label="Restore"
+    :danger="true"
+    @confirm="confirmRestore"
+    @cancel="showRestoreConfirm = false"
+  />
+
+  <!-- ── Result toast ─────────────────────────────────────────────────────────── -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0 translate-y-2"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 translate-y-2"
+    >
+      <div
+        v-if="toastVisible"
+        class="fixed bottom-6 left-1/2 z-[200] -translate-x-1/2 flex items-center gap-3 rounded-[10px] bg-[#1f2937] px-4 py-3 shadow-[0_8px_24px_rgba(16,24,40,.18)]"
+        style="color: #fff"
+        role="status"
+      >
+        <div
+          class="flex h-5 w-5 flex-none items-center justify-center rounded-full text-xs font-bold text-card"
+          :class="toastIsError ? 'bg-red' : 'bg-green'"
+        >
+          {{ toastIsError ? '!' : '✓' }}
+        </div>
+        <span class="text-[13px] font-medium" style="color: #fff">{{ toastMessage }}</span>
+      </div>
+    </Transition>
+  </Teleport>
 </template>

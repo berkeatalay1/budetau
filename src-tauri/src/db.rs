@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use rusqlite::Connection;
 use tauri::{AppHandle, Manager};
@@ -213,6 +213,44 @@ pub fn seed_defaults(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
+// ---------------------------------------------------------------------------
+// Backup & restore helpers — plain functions over file paths, unit-testable.
+// ---------------------------------------------------------------------------
+
+/// Run `PRAGMA integrity_check` against the SQLite file at `path`.
+///
+/// Returns `Ok(())` only when SQLite reports the single row `"ok"`. A missing
+/// file, a non-SQLite file, or a corrupt database all surface as an `Err` with
+/// a human-readable message (so the frontend can show it in a toast).
+pub fn check_integrity(path: &Path) -> Result<(), String> {
+    let conn =
+        Connection::open(path).map_err(|e| format!("cannot open {}: {e}", path.display()))?;
+    let result: String = conn
+        .query_row("PRAGMA integrity_check;", [], |row| row.get(0))
+        .map_err(|e| format!("not a valid database: {e}"))?;
+    if result != "ok" {
+        return Err(format!("integrity check failed: {result}"));
+    }
+    Ok(())
+}
+
+/// Copy the database file at `src` to `dst`, then verify the copy passes
+/// [`check_integrity`]. A copy that fails verification is removed so a corrupt
+/// backup is never left behind.
+///
+/// The caller is responsible for holding the DB lock (so no write is in flight)
+/// while this runs; with WAL disabled an idle connection leaves a consistent
+/// on-disk file that is safe to copy.
+pub fn export_to(src: &Path, dst: &Path) -> Result<(), String> {
+    std::fs::copy(src, dst)
+        .map_err(|e| format!("failed to write backup to {}: {e}", dst.display()))?;
+    if let Err(e) = check_integrity(dst) {
+        let _ = std::fs::remove_file(dst);
+        return Err(format!("backup verification failed: {e}"));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,6 +263,29 @@ mod tests {
         )
         .unwrap()
             > 0
+    }
+
+    /// A fresh, unique temp directory for file-based tests, removed by the
+    /// returned guard on drop so the suite leaves nothing behind.
+    struct TmpDir(PathBuf);
+    impl TmpDir {
+        fn new() -> Self {
+            use std::sync::atomic::{AtomicU64, Ordering};
+            static COUNTER: AtomicU64 = AtomicU64::new(0);
+            let n = COUNTER.fetch_add(1, Ordering::Relaxed);
+            let mut p = std::env::temp_dir();
+            p.push(format!("budetau-test-{}-{n}", std::process::id()));
+            std::fs::create_dir_all(&p).unwrap();
+            TmpDir(p)
+        }
+        fn join(&self, name: &str) -> PathBuf {
+            self.0.join(name)
+        }
+    }
+    impl Drop for TmpDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
     }
 
     #[test]
@@ -353,5 +414,63 @@ mod tests {
             .query_row("SELECT COUNT(*) FROM accounts;", [], |row| row.get(0))
             .unwrap();
         assert_eq!(accounts, 1, "seeding twice must not duplicate the default account");
+    }
+
+    #[test]
+    fn export_creates_a_verified_copy() {
+        let dir = TmpDir::new();
+        let src = dir.join("budget.db");
+        let dst = dir.join("backup.db");
+
+        let conn = Connection::open(&src).unwrap();
+        init(&conn).unwrap();
+        seed_defaults(&conn).unwrap();
+        drop(conn);
+
+        export_to(&src, &dst).unwrap();
+        assert!(dst.exists(), "backup file should exist");
+        // The copy is a real, intact database at the current schema version.
+        check_integrity(&dst).unwrap();
+        let restored = Connection::open(&dst).unwrap();
+        let version: i64 = restored
+            .query_row("PRAGMA user_version;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(version, CURRENT_SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn check_integrity_rejects_a_non_database_file() {
+        let dir = TmpDir::new();
+        let bogus = dir.join("not.db");
+        std::fs::write(&bogus, b"this is plainly not a sqlite database").unwrap();
+        assert!(
+            check_integrity(&bogus).is_err(),
+            "a non-SQLite file must fail the integrity check"
+        );
+    }
+
+    #[test]
+    fn export_then_reinit_restores_to_current_schema() {
+        // A backup taken from an older schema is brought current by `init` on
+        // restore — exercise that the migration path runs against a copy.
+        let dir = TmpDir::new();
+        let old = dir.join("old.db");
+
+        let conn = Connection::open(&old).unwrap();
+        // Simulate a v1-only database (no alert_threshold / parent_id yet).
+        migrate_v1(&conn).unwrap();
+        conn.execute_batch("PRAGMA user_version = 1;").unwrap();
+        drop(conn);
+
+        let copy = dir.join("copy.db");
+        export_to(&old, &copy).unwrap();
+
+        // Restoring re-runs init, which migrates the copy forward.
+        let restored = Connection::open(&copy).unwrap();
+        init(&restored).unwrap();
+        let version: i64 = restored
+            .query_row("PRAGMA user_version;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(version, CURRENT_SCHEMA_VERSION);
     }
 }

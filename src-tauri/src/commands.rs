@@ -646,6 +646,76 @@ pub fn delete_transaction(state: tauri::State<'_, DbState>, id: i64) -> Result<(
 }
 
 // ---------------------------------------------------------------------------
+// Backup & restore — copy the live SQLite file to/from a user-chosen path.
+// The frontend picks the path via the dialog plugin; these commands do the
+// file work and verify integrity. Money/data invariants are untouched.
+// ---------------------------------------------------------------------------
+
+/// Export a verified copy of the live database to `path`.
+///
+/// Holds the DB lock for the duration so no write is in flight; with WAL
+/// disabled the on-disk file is then a consistent snapshot that is safe to
+/// copy. The copy is integrity-checked before the command returns.
+#[tauri::command]
+pub fn export_backup(
+    app: AppHandle,
+    state: tauri::State<'_, DbState>,
+    path: String,
+) -> Result<(), String> {
+    let db_path = db::resolve_db_path(&app)?;
+    // Hold the lock across the copy to block concurrent writes.
+    let _guard = state.0.lock().map_err(|e| e.to_string())?;
+    db::export_to(&db_path, std::path::Path::new(&path))
+}
+
+/// Restore the database from the backup file at `path`, overwriting the
+/// current data.
+///
+/// Steps, all under the DB lock: (1) verify the backup passes
+/// `integrity_check`; (2) take an automatic timestamped backup of the current
+/// database next to it (the UI promises this); (3) drop the live connection,
+/// copy the backup over the live file, then reopen and re-run `init` +
+/// `seed_defaults` so an older-schema backup is migrated forward and the
+/// "at least one account" invariant still holds.
+#[tauri::command]
+pub fn restore_backup(
+    app: AppHandle,
+    state: tauri::State<'_, DbState>,
+    path: String,
+) -> Result<(), String> {
+    let db_path = db::resolve_db_path(&app)?;
+    let backup_path = std::path::Path::new(&path);
+
+    // 1. Refuse to restore from a file that is not an intact database.
+    db::check_integrity(backup_path)?;
+
+    let mut guard = state.0.lock().map_err(|e| e.to_string())?;
+
+    // 2. Safety copy of the current data before we overwrite it.
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let auto_backup = db_path.with_file_name(format!("budget-pre-restore-{stamp}.db"));
+    std::fs::copy(&db_path, &auto_backup)
+        .map_err(|e| format!("failed to back up current database before restore: {e}"))?;
+
+    // 3. Drop the live connection (placeholder in-memory db) so no handle is
+    //    open on the file, overwrite it, then reopen the restored database.
+    *guard = Connection::open_in_memory()
+        .map_err(|e| format!("failed to release the database during restore: {e}"))?;
+    std::fs::copy(backup_path, &db_path)
+        .map_err(|e| format!("failed to overwrite the database with the backup: {e}"))?;
+
+    let conn =
+        Connection::open(&db_path).map_err(|e| format!("failed to reopen restored database: {e}"))?;
+    db::init(&conn).map_err(|e| format!("failed to initialise restored database: {e}"))?;
+    db::seed_defaults(&conn).map_err(|e| format!("failed to seed restored database: {e}"))?;
+    *guard = conn;
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
 // Tests — exercise the plain DB logic against an in-memory database.
 // ---------------------------------------------------------------------------
 

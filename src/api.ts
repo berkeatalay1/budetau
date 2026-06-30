@@ -63,3 +63,11 @@ export const updateTransaction = (transaction: Transaction): Promise<Transaction
   invoke('update_transaction', { transaction })
 
 export const deleteTransaction = (id: number): Promise<void> => invoke('delete_transaction', { id })
+
+// --- Backup & restore ----------------------------------------------------
+
+/** Write a verified copy of the database to `path` (chosen via the dialog). */
+export const exportBackup = (path: string): Promise<void> => invoke('export_backup', { path })
+
+/** Overwrite the current database with the backup file at `path`. */
+export const restoreBackup = (path: string): Promise<void> => invoke('restore_backup', { path })
