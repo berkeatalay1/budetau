@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budetau - Engineering Handoff & Continuation Plan</title>
+<style>
+    :root{--primary:#1f2937;--secondary:#4b5563;--bg:#f9fafb;--card:#fff;--border:#e5e7eb;--accent:#2563eb;--green:#059669;--amber:#d97706;--red:#dc2626;}
+    *{box-sizing:border-box;}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6;color:var(--primary);background:var(--bg);margin:0;padding:40px 20px;}
+    .container{max-width:920px;margin:0 auto;background:var(--card);padding:40px 50px;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,.05),0 4px 6px -2px rgba(0,0,0,.025);}
+    h1{border-bottom:3px solid var(--accent);padding-bottom:12px;margin-top:0;font-size:2.1em;}
+    h2{margin-top:38px;font-size:1.4em;border-bottom:1px solid var(--border);padding-bottom:8px;}
+    h3{color:var(--accent);margin-top:22px;font-size:1.1em;}
+    p,li{color:var(--secondary);}
+    li{margin-bottom:7px;}
+    table{width:100%;border-collapse:collapse;margin:20px 0;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+    th,td{border-bottom:1px solid var(--border);padding:11px 14px;text-align:left;vertical-align:top;font-size:.95em;}
+    th{background:#f3f4f6;font-weight:600;color:var(--primary);}
+    tr:last-child td{border-bottom:none;}
+    tr:nth-child(even){background:#f8fafc;}
+    code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;color:#be123c;}
+    pre{background:#0e1116;color:#e8eaed;padding:14px 16px;border-radius:8px;overflow:auto;font-size:.85em;line-height:1.5;}
+    pre code{background:none;color:inherit;padding:0;}
+    strong{color:var(--primary);}
+    .crit{background:#fef2f2;border-left:4px solid var(--red);padding:12px 16px;border-radius:4px;margin:18px 0;color:#7f1d1d;}
+    .note{background:#eff6ff;border-left:4px solid var(--accent);padding:12px 16px;border-radius:4px;margin:18px 0;color:#1e3a8a;font-size:.95em;}
+    .ok{color:var(--green);font-weight:700;}
+    .badge{display:inline-block;font-size:.72em;font-weight:700;padding:2px 9px;border-radius:999px;margin-left:6px;vertical-align:middle;}
+    .b-done{background:#dcfce7;color:#15803d;}
+    .b-next{background:#dbeafe;color:#1d4ed8;}
+    kbd{background:#eef0f3;border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:.85em;}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Budetau — Engineering Handoff &amp; Continuation Plan</h1>
+    <p><strong>Read this first if you are a new agent or developer picking up the project.</strong> It captures the stack, the non-obvious conventions that <em>will</em> bite you, what's shipped, and how to continue. Sources of truth: the code (<code>src/</code>, <code>src-tauri/</code>) and the <a href="feature_list.html">feature list</a>.</p>
+
+    <div class="note"><strong>State as of this handoff:</strong> branch <code>phase-1-local-infra</code>, HEAD <code>fe435cd</code>. 4 views, 18 Vue components, 6 Pinia stores, 18 Rust commands, 22 backend tests (all green). Build + lint + clippy clean.</div>
+
+    <!-- ============================================ -->
+    <h2>1 · What this is</h2>
+    <p>Budetau is a <strong>local-first personal budget planner</strong> — a native macOS desktop app. All data lives in a single private SQLite file in the user's Documents folder (cloud-syncable). No servers, no accounts.</p>
+    <table>
+      <tr><th>Layer</th><th>Tech</th></tr>
+      <tr><td>Shell</td><td>Tauri <strong>v2</strong></td></tr>
+      <tr><td>Frontend</td><td>Vue 3 (<code>&lt;script setup&gt;</code>) + TypeScript + Vite + Pinia + Vue Router + Tailwind v3 + ApexCharts</td></tr>
+      <tr><td>Backend</td><td>Rust + <code>rusqlite</code> (bundled SQLite), serde</td></tr>
+      <tr><td>DB</td><td>SQLite single file at <code>~/Documents/BudgetPlanner/budget.db</code>; WAL disabled for cloud-sync safety</td></tr>
+    </table>
+
+    <!-- ============================================ -->
+    <h2>2 · Quick start</h2>
+    <div class="crit"><strong>Toolchain is NOT on the default PATH.</strong> Node (Homebrew) and Rust (rustup) are installed but not on a non-login shell's PATH. <u>Prefix every toolchain command</u> with:<br>
+    <code>export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"</code></div>
+    <pre><code># run the desktop app (recompiles Rust + serves Vite)
+npm run tauri dev
+
+# frontend gate
+npm run build        # vue-tsc --noEmit && vite build  (strict: noUnusedLocals/Parameters)
+npm run lint         # eslint . --fix
+
+# backend gate
+cd src-tauri && cargo test          # 22 tests
+cd src-tauri && cargo clippy -- -D warnings</code></pre>
+    <p>Network/build commands need sandbox escape in this environment (<code>dangerouslyDisableSandbox</code>). The DB auto-creates and migrates on first launch.</p>
+
+    <!-- ============================================ -->
+    <h2>3 · Data model</h2>
+    <p>Money is always stored as <strong>INTEGER cents</strong>. Schema version tracked via <code>PRAGMA user_version</code>; migrations are append-only in <code>src-tauri/src/db.rs</code> (<code>migrate_v1..v3</code>), each bumping the version independently.</p>
+    <table>
+      <tr><th>Table</th><th>Key columns</th></tr>
+      <tr><td><code>app_profiles</code></td><td>id, profile_name, created_at, db_sync_path</td></tr>
+      <tr><td><code>accounts</code></td><td>id, profile_id, name, balance <em>(cents)</em>, currency, type</td></tr>
+      <tr><td><code>categories</code></td><td>id, profile_id, name, color_code, type, <strong>parent_id</strong> <em>(v3: NULL = top-level; one level of nesting)</em></td></tr>
+      <tr><td><code>budgets</code></td><td>id, profile_id, category_id, period, amount <em>(cents)</em>, <strong>alert_threshold</strong> <em>(v2: 0–1 fraction)</em></td></tr>
+      <tr><td><code>transactions</code></td><td>id, account_id, amount <em>(cents, positive)</em>, category_id, date, note, type, transfer_account_id</td></tr>
+    </table>
+    <p>Migrations: <strong>v1</strong> core tables · <strong>v2</strong> <code>budgets.alert_threshold</code> · <strong>v3</strong> <code>categories.parent_id</code>. On a <em>fresh</em> DB, seeding adds a "Personal" profile, default categories (incl. example subs under Dining Out), and a default "Cash" account. Seeding is per-entity idempotent, so legacy DBs backfill a default account but do <u>not</u> get example sub-categories (by design).</p>
+
+    <!-- ============================================ -->
+    <h2>4 · Conventions &amp; invariants <span class="badge b-done">MUST READ</span></h2>
+
+    <div class="crit"><strong>① Transaction amounts are a POSITIVE magnitude.</strong> The sign comes from <code>type</code> (expense subtracts, income adds, transfer moves between accounts). <u>Never store a signed amount.</u> The backend (<code>insert_transaction</code> / <code>update_transaction_logic</code> / <code>adjust_balances</code>) defensively <code>.abs()</code>es it. A signed amount inverts the dashboard net and corrupts balances — this was a real bug (fixed in <code>fe435cd</code>).</div>
+
+    <div class="crit"><strong>② Balances are mutated incrementally, not recomputed.</strong> Insert/update/delete adjust <code>accounts.balance</code> atomically inside one rusqlite transaction. This is fast but fragile: a bad write can drift a balance. <strong>Recommended next hardening:</strong> a "recalculate balances from transactions" maintenance command. There is no separate "opening balance" column — the account's starting balance is baked into <code>balance</code> at creation.</div>
+
+    <div class="crit"><strong>③ Prettier config is <code>semi:false</code>.</strong> NEVER write multi-statement inline template handlers like <code>@click="a = 1; b = 2"</code> — Prettier strips the semicolons and reformats into invalid code that breaks the Vue compiler. <u>Always extract to a method</u> and use <code>@click="myMethod"</code>. This broke the build twice.</div>
+
+    <div class="note"><strong>④ Budgets roll up.</strong> A budget attaches to a <em>top-level</em> category; spending in any of its sub-categories counts toward it. The frontend uses <code>categoryStore.descendantIds(id)</code> for this. Category helpers live in <code>src/stores/category.ts</code>: <code>topLevel</code>, <code>childrenOf</code>, <code>descendantIds</code>, <code>parentOf</code>, <code>displayPath</code> (→ "Dining Out › Coffee").</div>
+
+    <h3>IPC contract</h3>
+    <ul>
+      <li>Rust structs use <code>#[serde(rename_all = "camelCase")]</code>; frontend types in <code>src/types/index.ts</code> mirror them.</li>
+      <li>All 18 commands return <code>Result&lt;T, String&gt;</code>; typed wrappers in <code>src/api.ts</code>; Pinia stores own mutations and re-fetch affected stores (e.g. transaction mutations refresh accounts).</li>
+      <li>Commands: <code>get_db_path</code>, list/create/update/delete for accounts, categories, budgets, transactions (delete guards: account/category in use is refused).</li>
+    </ul>
+
+    <!-- ============================================ -->
+    <h2>5 · How to verify UI changes</h2>
+    <p>The app needs the Tauri runtime for real IPC, but you can drive the Vite dev server in a headless browser and <strong>mock <code>window.__TAURI_INTERNALS__.invoke</code></strong> to render any data state. Pattern used throughout this project (preview tools):</p>
+    <pre><code>// .claude/launch.json runs vite directly (node path, since npm isn't on PATH):
+{ "name":"vite-dev","runtimeExecutable":"/opt/homebrew/bin/node",
+  "runtimeArgs":["node_modules/vite/bin/vite.js","--port","1420"],"port":1420 }
+
+// then in the page: define window.__TAURI_INTERNALS__.invoke = (cmd,args)=>Promise.resolve(mockData[cmd])
+// navigate (click sidebar &lt;a&gt;) to remount views → they re-fetch with the mock.</code></pre>
+    <p>ApexCharts has an entrance animation — screenshot after ~700ms. Always run the production build + lint <em>after</em> any lint <code>--fix</code> (Prettier can re-break inline handlers).</p>
+
+    <!-- ============================================ -->
+    <h2>6 · What's shipped <span class="badge b-done">DONE</span></h2>
+    <ul>
+      <li><strong>Foundation:</strong> Tauri v2 app, SQLite + migrations, atomic balances, typed IPC bridge, dark mode, responsive shell (native title bar, sidebar, FAB, <kbd>⌘K</kbd>).</li>
+      <li><strong>Dashboard:</strong> hero (income/spend/net this month), budget cards (under/near/over), alert banners, empty state, month nav.</li>
+      <li><strong>Transactions:</strong> day-grouped cards, search + hierarchy-aware filters, edit/delete.</li>
+      <li><strong>Quick-Add</strong> (<kbd>⌘K</kbd>): amount, grouped category autocomplete (parent › sub), date, type, transfer, toast.</li>
+      <li><strong>Analytics:</strong> ApexCharts cash-flow, spending donut with parent→sub drill-down, monthly-net.</li>
+      <li><strong>Accounts</strong> &amp; <strong>Category</strong> management (Settings); <strong>budgets</strong> create/edit/delete with per-budget alert threshold.</li>
+      <li><strong>Sub-categories:</strong> one level (parent → sub), roll-up to parent budget, across all four surfaces.</li>
+    </ul>
+
+    <!-- ============================================ -->
+    <h2>7 · Continue here <span class="badge b-next">NEXT</span></h2>
+    <p>Committed roadmap (see <a href="feature_list.html">feature_list.html</a> for the full QoL/parked lists). Recommended order:</p>
+    <table>
+      <tr><th>#</th><th>Feature</th><th>Notes for the implementer</th></tr>
+      <tr><td>1</td><td><strong>Backup &amp; restore</strong></td><td>Settings has disabled placeholder buttons. Needs Rust <code>export_backup</code>/<code>restore_backup</code> (file copy + <code>PRAGMA integrity_check</code>) and the Tauri dialog plugin for file picking.</td></tr>
+      <tr><td>2</td><td><strong>Balance recompute utility</strong></td><td>Maintenance command to rebuild <code>accounts.balance</code> from transactions (addresses invariant ② drift). Cheap, high-value safety net.</td></tr>
+      <tr><td>3</td><td><strong>CSV bank import</strong></td><td>Rust <code>csv</code> parser, column mapping, preview, dedupe via an import hash. New <code>import_batches</code> table + migration v4.</td></tr>
+      <tr><td>4</td><td><strong>Recurring transactions</strong></td><td>New <code>recurring_rules</code> table (migration v4/v5), post-due-on-launch scheduler, management UI.</td></tr>
+    </table>
+
+    <h3>Recommended workflow (what worked here)</h3>
+    <ol>
+      <li><strong>Wave 0 (you/orchestrator):</strong> do all schema migration + Rust commands + <code>api.ts</code>/types/store changes in the shared files yourself, commit as a checkpoint. This avoids parallel agents colliding on <code>db.rs</code>/<code>commands.rs</code>/<code>lib.rs</code>.</li>
+      <li><strong>Wave 1 (parallel agents):</strong> one agent per UI surface, each owning a <u>disjoint</u> set of files (a view + its components). Give each agent: the toolchain PATH rule, the Prettier-handler rule, the store helpers it needs, and "no public interface changes."</li>
+      <li><strong>Wave 2 (you):</strong> run the full gate on the merged tree, fix leftovers, visual-verify with the mock-invoke pattern, commit.</li>
+    </ol>
+
+    <!-- ============================================ -->
+    <h2>8 · Known issues / gotchas</h2>
+    <ul>
+      <li><strong>Balance drift</strong> (invariant ②) — no recompute utility yet. Top of the backlog.</li>
+      <li><strong>ApexCharts bundle</strong> ~518 kB → one chunk-size build warning. Harmless for desktop; lazy-load the Analytics route to silence it.</li>
+      <li><strong>"Current month" captured at mount</strong> in Dashboard/Analytics — won't auto-advance past midnight if left open. Pre-existing, minor.</li>
+      <li><strong>Stray git worktree:</strong> an agent left one under <code>.claude/worktrees/</code> (gitignored). eslint now ignores <code>.claude/**</code>; remove with <code>git worktree remove</code> if it bothers you.</li>
+      <li><strong>Example sub-categories</strong> only seed on a brand-new DB; existing DBs get the <code>parent_id</code> column but no example data (create subs in Settings → Categories).</li>
+    </ul>
+
+    <div class="note">Docs in this folder: <a href="feature_list.html">feature_list.html</a> (roadmap), <a href="budget_planner_architecture_v2.html">budget_planner_architecture_v2.html</a> (original spec, partly superseded — this handoff is the current reference), <a href="phase1.html">phase1.html</a> (historical Phase 1 plan), <a href="UI_DESIGN_BRIEF.md">UI_DESIGN_BRIEF.md</a>, and <code>design/</code> (the imported Claude Design source the UI was built from).</div>
+</div>
+</body>
+</html>

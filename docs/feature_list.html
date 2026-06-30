@@ -107,33 +107,36 @@
     <table>
       <thead><tr><th>Feature</th><th>Detail</th></tr></thead>
       <tbody>
-        <tr><td><strong>Configurable alert threshold</strong> <span class="check">✓</span></td><td><code>budgets.alert_threshold</code> column + commands (UI in progress below).</td></tr>
+        <tr><td><strong>Configurable alert threshold</strong> <span class="check">✓</span></td><td><code>budgets.alert_threshold</code> column + commands.</td></tr>
         <tr><td><strong>Account update / delete</strong> <span class="check">✓</span></td><td>Rename/edit accounts; delete is refused if any transaction still references the account.</td></tr>
-        <tr><td><strong>Budget update / delete</strong> <span class="check">✓</span></td><td>Edit amount/threshold and remove budgets (UI in progress below).</td></tr>
+        <tr><td><strong>Budget update / delete</strong> <span class="check">✓</span></td><td>Edit amount/threshold and remove budgets.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Accounts · Analytics · Sub-categories <span class="badge badge-done">SHIPPED</span></h3>
+    <table>
+      <thead><tr><th>Feature</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Accounts management</strong> <span class="check">✓</span></td><td>Settings: list / add / rename / delete accounts, with the delete-guard surfaced.</td></tr>
+        <tr><td><strong>Category management</strong> <span class="check">✓</span></td><td>Settings: grouped list, create / rename / delete, assign parent &amp; color.</td></tr>
+        <tr><td><strong>Analytics &amp; charts</strong> <span class="check">✓</span></td><td>ApexCharts cash-flow, spending donut (with parent→sub drill-down), month-over-month.</td></tr>
+        <tr><td><strong>Configurable budget alerts</strong> <span class="check">✓</span></td><td>Per-budget "alert at X%"; Manage Budgets modal to edit/delete.</td></tr>
+        <tr><td><strong>Sub-categories</strong> <span class="check">✓</span></td><td>One level (parent → sub); roll-up to the parent budget; across manager, quick-add, analytics drill-down, and transactions.</td></tr>
+        <tr><td><strong>Amount-sign hardening</strong> <span class="check">✓</span></td><td>Amounts stored as positive magnitude (sign from <code>type</code>); backend abs-guards insert/update so balances can't be corrupted.</td></tr>
       </tbody>
     </table>
 
     <!-- ============================================================= -->
     <h2>2 · What we want for sure <span class="badge badge-planned">PLANNED</span></h2>
 
-    <h3>Being built right now <span class="badge badge-progress">IN PROGRESS</span></h3>
-    <table>
-      <thead><tr><th>Feature</th><th>Detail</th></tr></thead>
-      <tbody>
-        <tr><td><strong>Accounts management UI</strong></td><td>Settings section to list / add / rename / delete accounts (uses the new backend, with the delete-guard surfaced).</td></tr>
-        <tr><td><strong>Analytics &amp; charts</strong></td><td>New Analytics page: cash-flow over time, spending-by-category donut, month-over-month — ApexCharts, theme-aware.</td></tr>
-        <tr><td><strong>Configurable budget alerts + manage</strong></td><td>Set the "alert me at X%" per budget; dashboard uses each budget's threshold; edit/delete budgets from "Manage budgets".</td></tr>
-      </tbody>
-    </table>
-
     <h3>Next up (committed)</h3>
     <table>
       <thead><tr><th>Feature</th><th>Detail</th><th>Notes</th></tr></thead>
       <tbody>
         <tr><td><strong>Backup &amp; restore</strong></td><td>Export a timestamped copy of the DB and restore from one, with an integrity check.</td><td>Settings buttons exist (disabled); backend + file dialog to come.</td></tr>
-        <tr><td><strong>Category management UI</strong></td><td>Add / edit / delete categories &amp; colors (today they're only seeded defaults).</td><td>Backend mostly exists; needs an editor UI.</td></tr>
-        <tr><td><strong>CSV bank import</strong></td><td>Local Rust CSV parser, column mapping, preview, dedupe via import hash, atomic batch insert.</td><td>Phase 3. New <code>import_batches</code> table.</td></tr>
-        <tr><td><strong>Recurring transactions</strong></td><td>Scheduled/auto-repeating entries (rent, salary); post-due on launch; manage rules.</td><td>Phase 3. New <code>recurring_rules</code> table.</td></tr>
+        <tr><td><strong>Balance recompute utility</strong></td><td>Rebuild <code>accounts.balance</code> from transactions — a safety net against incremental-balance drift.</td><td>Cheap, high value (see HANDOFF invariant ②).</td></tr>
+        <tr><td><strong>CSV bank import</strong></td><td>Local Rust CSV parser, column mapping, preview, dedupe via import hash, atomic batch insert.</td><td>New <code>import_batches</code> table (migration v4).</td></tr>
+        <tr><td><strong>Recurring transactions</strong></td><td>Scheduled/auto-repeating entries (rent, salary); post-due on launch; manage rules.</td><td>New <code>recurring_rules</code> table.</td></tr>
       </tbody>
     </table>
 
@@ -170,7 +173,7 @@
       </tbody>
     </table>
 
-    <div class="note">Status reflects the build as of the current sprint (Phase 3: Accounts &amp; Analytics). The "in progress" items are being implemented by parallel agents now; they move to <strong>SHIPPED</strong> once verified and committed.</div>
+    <div class="note">Status current as of branch <code>phase-1-local-infra</code> @ <code>fe435cd</code> — Accounts, Analytics, configurable alerts, and sub-categories are all shipped and verified. For stack, conventions, invariants, and the recommended way to continue, see <strong><a href="HANDOFF.html">HANDOFF.html</a></strong>.</div>
 </div>
 </body>
 </html>
