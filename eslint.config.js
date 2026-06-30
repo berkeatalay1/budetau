@@ -4,7 +4,7 @@ import prettierConfig from '@vue/eslint-config-prettier'
 
 export default [
   {
-    ignores: ['dist/**', 'src-tauri/**', 'node_modules/**', 'src/vite-env.d.ts'],
+    ignores: ['dist/**', 'src-tauri/**', 'node_modules/**', '.claude/**', 'src/vite-env.d.ts'],
   },
   ...vue.configs['flat/recommended'],
   ...vueTsConfig(),

@@ -20,14 +20,10 @@ const form = ref<Transaction>({ ...props.transaction })
 // Amount in display units (dollars) for the input
 const amountDisplay = ref(Math.abs(props.transaction.amount) / 100)
 
-// Keep the sign consistent with the type
-const signedAmount = computed(() => {
-  const abs = Math.round(amountDisplay.value * 100)
-  if (form.value.type === 'income') return abs
-  if (form.value.type === 'expense') return -abs
-  // transfer: positive from the source account's perspective — keep absolute
-  return abs
-})
+// Amount is ALWAYS stored as a positive magnitude in cents; the backend
+// derives the sign from `type` when adjusting balances. Never store a signed
+// amount here, or balances and totals break.
+const amountCents = computed(() => Math.abs(Math.round(amountDisplay.value * 100)))
 
 watch(
   () => props.transaction,
@@ -79,7 +75,7 @@ const hierarchicalCategories = computed<CategoryOption[]>(() => {
 function handleSave() {
   emit('save', {
     ...form.value,
-    amount: signedAmount.value,
+    amount: amountCents.value,
   })
 }
 </script>

@@ -367,7 +367,9 @@ fn adjust_balances(
     transfer_account_id: Option<i64>,
     dir: i64,
 ) -> rusqlite::Result<()> {
-    let amt = amount * dir;
+    // `amount` is a positive magnitude by invariant; abs() defensively so a
+    // stray negative can never invert a balance update.
+    let amt = amount.abs() * dir;
     match ttype {
         "expense" => {
             tx.execute(
@@ -413,13 +415,15 @@ fn adjust_balances(
 fn insert_transaction(conn: &mut Connection, new: &NewTransaction) -> rusqlite::Result<Transaction> {
     let tx = conn.transaction()?;
 
+    // Store a positive magnitude; the sign is always derived from `type`.
+    let amount = new.amount.abs();
     tx.execute(
         "INSERT INTO transactions \
          (account_id, amount, category_id, date, note, type, transfer_account_id) \
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7);",
         params![
             new.account_id,
-            new.amount,
+            amount,
             new.category_id,
             new.date,
             new.note,
@@ -432,7 +436,7 @@ fn insert_transaction(conn: &mut Connection, new: &NewTransaction) -> rusqlite::
     adjust_balances(
         &tx,
         &new.r#type,
-        new.amount,
+        amount,
         new.account_id,
         new.transfer_account_id,
         1,
@@ -462,13 +466,15 @@ fn update_transaction_logic(
         -1,
     )?;
 
+    // Store a positive magnitude; the sign is always derived from `type`.
+    let amount = t.amount.abs();
     tx.execute(
         "UPDATE transactions SET \
          account_id = ?1, amount = ?2, category_id = ?3, date = ?4, note = ?5, \
          type = ?6, transfer_account_id = ?7 WHERE id = ?8;",
         params![
             t.account_id,
-            t.amount,
+            amount,
             t.category_id,
             t.date,
             t.note,
@@ -481,7 +487,7 @@ fn update_transaction_logic(
     adjust_balances(
         &tx,
         &t.r#type,
-        t.amount,
+        amount,
         t.account_id,
         t.transfer_account_id,
         1,
@@ -1034,5 +1040,37 @@ mod tests {
         delete_category_logic(&conn, coffee.id).unwrap();
         // Now the parent (childless) can be deleted too.
         delete_category_logic(&conn, parent.id).unwrap();
+    }
+
+    #[test]
+    fn negative_amount_is_normalized_to_positive_magnitude() {
+        let (mut conn, checking, _s) = setup();
+
+        // A buggy client sends a signed (negative) expense amount.
+        let t = insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: checking,
+                amount: -2_500,
+                category_id: None,
+                date: "2026-06-25".into(),
+                note: None,
+                r#type: "expense".into(),
+                transfer_account_id: None,
+            },
+        )
+        .unwrap();
+
+        // Stored as a positive magnitude, and the balance went DOWN (expense),
+        // not up — i.e. the sign came from `type`, not the amount.
+        assert_eq!(t.amount, 2_500);
+        assert_eq!(balance_of(&conn, checking), 100_000 - 2_500);
+
+        // Same protection on update.
+        let mut edited = t.clone();
+        edited.amount = -4_000;
+        let u = update_transaction_logic(&mut conn, &edited).unwrap();
+        assert_eq!(u.amount, 4_000);
+        assert_eq!(balance_of(&conn, checking), 100_000 - 4_000);
     }
 }
