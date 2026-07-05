@@ -37,8 +37,7 @@
     <h1>Budetau — Engineering Handoff &amp; Continuation Plan</h1>
     <p><strong>Read this first if you are a new agent or developer picking up the project.</strong> It captures the stack, the non-obvious conventions that <em>will</em> bite you, what's shipped, and how to continue. Sources of truth: the code (<code>src/</code>, <code>src-tauri/</code>) and the <a href="feature_list.html">feature list</a>.</p>
 
-    <div class="note"><strong>State as of this handoff:</strong> branch <code>phase-1-local-infra</code>, HEAD <code>5fb04c1</code>. 5 views, 21 Vue components, 8 Pinia stores, 22 Rust commands, 38 backend tests + 11 Vitest (all green). Build + lint + clippy clean. Shipped since the last handoff: <strong>backup &amp; restore</strong>, <strong>balance recompute</strong> (opening-balance migration v4), plus infra polish (lazy-loaded Analytics route, pruned pre-restore backups, a global toast store, and a Vitest harness for the Pinia stores).</div>
-    <div class="crit"><strong>⚠ Mid-epic pause point.</strong> The <strong>envelope-budgeting (YNAB core loop)</strong> epic is <u>partially landed</u>: Wave 0 backend (migration v5 + engine) and Wave 1 T4/T5 (Plan view + move-money) are done, committed, and green. <strong>T6 (income → Ready-to-Assign UX), T7 (dashboard envelope surfacing), T8 (integration), T9 (final docs) are NOT done.</strong> See <a href="#envelope-epic">§7 · Envelope epic status</a> before continuing it.</div>
+    <div class="note"><strong>State as of this handoff:</strong> branch <code>phase-1-local-infra</code>, HEAD <code>dfe01c6</code>. 5 views, 24 Vue components, 8 Pinia stores, 22 Rust commands, 38 backend tests + 11 Vitest (all green). Build + lint + clippy clean. <strong>Envelope budgeting (YNAB core loop) v1 is shipped</strong> — see <a href="#envelope-epic">§7</a>. Also shipped since the prior handoff: backup &amp; restore, balance recompute (migration v4), and infra polish (lazy Analytics route, pruned pre-restore backups, global toast store, Vitest harness).</div>
 
     <!-- ============================================ -->
     <h2>1 · What this is</h2>
@@ -122,32 +121,39 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
       <li><strong>Sub-categories:</strong> one level (parent → sub), roll-up to parent budget, across all four surfaces.</li>
       <li><strong>Backup &amp; restore</strong> (Settings): export a verified timestamped copy, or restore from a file — Tauri dialog plugin for picking, <code>integrity_check</code> on both sides, restore confirms first and auto-backs-up the current DB, then reloads.</li>
       <li><strong>Balance recompute</strong> (Settings → Maintenance): one-click rebuild of every account balance from <code>opening_balance</code> + transaction history — a safety net against invariant ② drift.</li>
+      <li><strong>Envelope budgeting (v1)</strong> — the YNAB core loop: Plan screen (assign / activity / available with rollover), move-money, income → Ready to Assign, and a re-worked envelope Dashboard. See §7.</li>
     </ul>
 
     <!-- ============================================ -->
-    <h2 id="envelope-epic">7 · Envelope-budgeting epic — <span class="badge" style="background:#fef3c7;color:#92400e;">IN PROGRESS</span></h2>
-    <p>Replacing the legacy fixed-amount <code>budgets</code> model with zero-based <strong>envelope budgeting</strong> (Ready to Assign → Assigned → Activity → Available, with monthly rollover and move-money). Paused at the T4/T5 boundary. <strong>v1 scope:</strong> all accounts on-budget; income = inflow to Ready to Assign; credit-card categories &amp; off-budget accounts deferred.</p>
+    <h2 id="envelope-epic">7 · Envelope-budgeting epic — <span class="badge b-done">SHIPPED (v1)</span></h2>
+    <p>Zero-based <strong>envelope budgeting</strong> (Ready to Assign → Assigned → Activity → Available, with monthly rollover and move-money) replaces the legacy fixed-amount <code>budgets</code> model. All nine tasks (T1–T9) landed and are green. <strong>v1 scope:</strong> all accounts on-budget; income = inflow to Ready to Assign; credit-card categories &amp; off-budget accounts deferred to v2.</p>
 
     <table>
-      <tr><th>Task</th><th>Status</th><th>What</th></tr>
-      <tr><td><strong>T1</strong></td><td class="ok">DONE</td><td>Migration v5: <code>category_months</code> + backfill from <code>budgets</code>.</td></tr>
-      <tr><td><strong>T2</strong></td><td class="ok">DONE</td><td>Engine: <code>get_budget_month(month)</code> + <code>set_assigned(categoryId, month, amount)</code>.</td></tr>
-      <tr><td><strong>T3</strong></td><td class="ok">DONE</td><td>IPC/types/store: <code>getBudgetMonth</code>/<code>setAssigned</code>, <code>BudgetMonth</code> types, <code>budgetMonth</code> store.</td></tr>
-      <tr><td><strong>T4</strong></td><td class="ok">DONE</td><td><code>PlanView.vue</code> + <code>plan/EnvelopeRow.vue</code>: sticky RTA header, parent→sub table, inline-edit Assigned, month nav, <code>/plan</code> route + sidebar link.</td></tr>
-      <tr><td><strong>T5</strong></td><td class="ok">DONE</td><td><code>plan/MoveMoneyModal.vue</code>: move funds between envelopes (RTA unchanged).</td></tr>
-      <tr><td><strong>T6</strong></td><td><strong>TODO</strong></td><td>Income → Ready-to-Assign UX in <code>QuickAddModal.vue</code> (type=income shows "goes to Ready to Assign"; hide/sentinel category). No backend change.</td></tr>
-      <tr><td><strong>T7</strong></td><td><strong>TODO</strong></td><td>Dashboard: replace fixed-budget cards with RTA tile + assigned-vs-available + top overspent, from the <code>budgetMonth</code> store. Remove old <code>budgets</code> reads.</td></tr>
-      <tr><td><strong>T8</strong></td><td><strong>TODO</strong></td><td>Integration: full gate + migration test on a populated v4 DB + end-to-end mock walkthrough (assign→spend→rollover→move).</td></tr>
-      <tr><td><strong>T9</strong></td><td><strong>TODO</strong></td><td>Docs: flip this section to SHIPPED, list v2 refinements.</td></tr>
+      <tr><th>Surface</th><th>Where</th></tr>
+      <tr><td><strong>Schema (v5)</strong></td><td><code>category_months</code> (signed <code>assigned</code>, per category/month); backfills legacy <code>budgets.amount</code> into the current month.</td></tr>
+      <tr><td><strong>Engine</strong></td><td><code>commands.rs</code>: <code>get_budget_month(month)</code> → per-expense-category <code>{assigned, activity, available}</code> + <code>readyToAssign</code>; <code>set_assigned(categoryId, month, amount)</code> (absolute upsert).</td></tr>
+      <tr><td><strong>Store/IPC</strong></td><td><code>budgetMonth</code> store; <code>getBudgetMonth</code>/<code>setAssigned</code> in <code>api.ts</code>; <code>BudgetMonth</code>/<code>BudgetMonthCategory</code> types.</td></tr>
+      <tr><td><strong>Plan view</strong></td><td><code>/plan</code> → <code>PlanView.vue</code> + <code>plan/EnvelopeRow.vue</code> + <code>plan/MoveMoneyModal.vue</code>: sticky RTA header, parent→sub table, inline-edit Assigned, month nav, move-money.</td></tr>
+      <tr><td><strong>Income UX</strong></td><td><code>QuickAddModal.vue</code>: income hides the category picker, shows "Ready to Assign", and posts <code>categoryId=null</code>. <code>TransactionCard.vue</code> labels such rows "Ready to Assign".</td></tr>
+      <tr><td><strong>Dashboard</strong></td><td><code>DashboardView.vue</code> + <code>dashboard/ReadyToAssignTile</code>, <code>EnvelopeSummaryStats</code>, <code>OverspentEnvelopes</code> — reads its viewed month via a <em>local</em> <code>getBudgetMonth</code> fetch (not the shared store).</td></tr>
     </table>
 
-    <div class="crit"><strong>Design decisions a resuming agent MUST honour:</strong>
+    <div class="crit"><strong>How it works — invariants to preserve when extending it:</strong>
       <ul>
         <li>Envelope <code>assigned</code>/<code>activity</code>/<code>available</code> are <strong>signed</strong> cents. The positive-cents invariant is <u>transaction amounts only</u>.</li>
         <li><code>set_assigned</code> is an <strong>absolute</strong> upsert (sets the value, not a delta). Inline-edit passes the new total; move-money reads each envelope's current <code>assigned</code> and sets <code>from−X</code> / <code>to+X</code>, so Ready to Assign is unchanged.</li>
-        <li><code>available</code> = cumulative <code>Σ(assigned + activity)</code> for all months ≤ the target month (this <em>is</em> the rollover). <code>readyToAssign</code> = income(≤month) + <code>Σ opening_balance</code> − assigned(≤month, all categories) − uncategorized outflow(≤month). Transfers net to zero.</li>
-        <li>The engine returns a <strong>flat per-category</strong> read model; the Plan view does parent→sub grouping via <code>categoryStore</code>. <strong>Known nuance / refinement for T-later:</strong> a parent row's Assigned cell shows the parent's <em>own</em> assigned while Activity/Available show the <em>group roll-up</em> (own + children) — internally consistent but can read oddly; revisit whether parents should be non-assignable group headers.</li>
-        <li>The legacy <code>budgets</code> table &amp; its CRUD commands are <strong>left intact</strong> (Dashboard/Analytics still read them until T7). Do not drop them mid-epic.</li>
+        <li><code>available</code> = cumulative <code>Σ(assigned + activity)</code> for all months ≤ the target month (this <em>is</em> the rollover). <code>readyToAssign</code> = income(≤month) + <code>Σ opening_balance</code> − assigned(≤month, all categories) − uncategorized outflow(≤month). Transfers net to zero. <strong>Income must post with <code>categoryId=null</code></strong> or it double-counts (RTA + envelope activity).</li>
+        <li>The engine returns a <strong>flat per-category</strong> read model; the Plan view does parent→sub grouping via <code>categoryStore</code>.</li>
+        <li>The Dashboard must <strong>not</strong> call <code>budgetMonthStore.setMonth</code> — that store is shared with the Plan screen; it fetches its own month into a local ref.</li>
+      </ul>
+    </div>
+
+    <div class="note"><strong>v2 refinements / deferred (not yet built):</strong>
+      <ul>
+        <li><strong>Credit-card categories</strong> (a payment envelope that fills as you spend on the card) and <strong>off-budget accounts</strong>.</li>
+        <li><strong>Cash overspend → next month:</strong> a negative <code>available</code> currently just rolls forward in that envelope; YNAB instead pulls cash overspending out of next month's Ready to Assign. Decide and implement.</li>
+        <li><strong>Parent-envelope semantics:</strong> today a parent row's Assigned cell shows the parent's <em>own</em> assigned while Activity/Available show the group roll-up (own + children) — internally consistent but can read oddly. Consider making top-level categories non-assignable group headers (YNAB-style).</li>
+        <li><strong>Dead legacy budget UI:</strong> <code>budgets</code> table + its CRUD commands and the now-unreferenced <code>dashboard/BudgetCard.vue</code>, <code>AlertBanner.vue</code>, <code>AddBudgetModal.vue</code>, <code>ManageBudgetsModal.vue</code> + the <code>budget</code> store remain in the tree (kept intact this epic). Remove once nothing depends on them.</li>
       </ul>
     </div>
 

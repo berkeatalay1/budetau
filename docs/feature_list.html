@@ -125,21 +125,12 @@
         <tr><td><strong>Amount-sign hardening</strong> <span class="check">✓</span></td><td>Amounts stored as positive magnitude (sign from <code>type</code>); backend abs-guards insert/update so balances can't be corrupted.</td></tr>
         <tr><td><strong>Backup &amp; restore</strong> <span class="check">✓</span></td><td>Settings: export a verified timestamped copy or restore from a file (Tauri dialog plugin). <code>integrity_check</code> on both sides; restore confirms, auto-backs-up the current DB, migrates an older backup forward, then reloads.</td></tr>
         <tr><td><strong>Balance recompute utility</strong> <span class="check">✓</span></td><td>Settings → Maintenance: rebuild every <code>accounts.balance</code> from <code>opening_balance</code> + transaction history (migration v4 adds/backfills <code>opening_balance</code>). Safety net against incremental-balance drift.</td></tr>
+        <tr><td><strong>Envelope budgeting — YNAB core loop (v1)</strong> <span class="check">✓</span></td><td>Zero-based budgeting: Ready to Assign → Assigned → Activity → Available with monthly rollover and move-money. Migration v5 (<code>category_months</code>) + engine; Plan screen; income → Ready to Assign; envelope Dashboard. Replaces the fixed-amount <code>budgets</code> model. v2 refinements (credit cards, off-budget accounts, cash-overspend→next-month RTA) deferred — see <a href="HANDOFF.html#envelope-epic">HANDOFF §7</a>.</td></tr>
       </tbody>
     </table>
 
     <!-- ============================================================= -->
-    <h2>2 · In progress <span class="badge" style="background:#fef3c7;color:#92400e;">PARTIAL</span></h2>
-
-    <table>
-      <thead><tr><th>Feature</th><th>Detail</th><th>Status</th></tr></thead>
-      <tbody>
-        <tr><td><strong>Envelope budgeting (YNAB core loop)</strong></td><td>Zero-based budgeting: Ready to Assign → Assigned → Activity → Available, monthly rollover, move-money. Replaces the fixed-amount <code>budgets</code> model.</td><td><strong>~55%.</strong> Backend (v5 schema + engine + store) and the Plan view + move-money modal are done &amp; green. Remaining: income→Ready-to-Assign UX, dashboard envelope surfacing, integration, docs. See <a href="HANDOFF.html#envelope-epic">HANDOFF §7</a>.</td></tr>
-      </tbody>
-    </table>
-
-    <!-- ============================================================= -->
-    <h2>3 · What we want for sure <span class="badge badge-planned">PLANNED</span></h2>
+    <h2>2 · What we want for sure <span class="badge badge-planned">PLANNED</span></h2>
 
     <h3>Next up (committed, after the envelope epic)</h3>
     <table>
@@ -151,7 +142,7 @@
     </table>
 
     <!-- ============================================================= -->
-    <h2>4 · Quality-of-life <span class="badge badge-qol">QoL</span></h2>
+    <h2>3 · Quality-of-life <span class="badge badge-qol">QoL</span></h2>
     <p>Genuinely nice, not committed. Pull any of these up if it earns its place.</p>
     <table>
       <thead><tr><th>Feature</th><th>Why it'd be nice</th></tr></thead>
@@ -170,7 +161,7 @@
     </table>
 
     <!-- ============================================================= -->
-    <h2>5 · Not now <span class="badge badge-deferred">PARKED</span></h2>
+    <h2>4 · Not now <span class="badge badge-deferred">PARKED</span></h2>
     <p>Considered and intentionally parked — revisit when the core is solid or there's a real need.</p>
     <table>
       <thead><tr><th>Feature</th><th>Why parked</th></tr></thead>
@@ -183,7 +174,7 @@
       </tbody>
     </table>
 
-    <div class="note">Status current as of branch <code>phase-1-local-infra</code> @ <code>5fb04c1</code> — Accounts, Analytics, configurable alerts, sub-categories, backup &amp; restore, and balance recompute are shipped and verified; the <strong>envelope-budgeting epic is ~55% landed and paused</strong> (backend + Plan view done; income UX, dashboard, integration, docs remain). For stack, conventions, invariants, the envelope design decisions, and the recommended way to continue, see <strong><a href="HANDOFF.html">HANDOFF.html</a></strong>.</div>
+    <div class="note">Status current as of branch <code>phase-1-local-infra</code> @ <code>dfe01c6</code> — Accounts, Analytics, configurable alerts, sub-categories, backup &amp; restore, balance recompute, and <strong>envelope budgeting (YNAB core loop, v1)</strong> are all shipped and verified. For stack, conventions, invariants, the envelope design/invariants, and the recommended way to continue, see <strong><a href="HANDOFF.html">HANDOFF.html</a></strong>.</div>
 </div>
 </body>
 </html>
