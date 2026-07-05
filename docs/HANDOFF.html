@@ -37,7 +37,8 @@
     <h1>Budetau — Engineering Handoff &amp; Continuation Plan</h1>
     <p><strong>Read this first if you are a new agent or developer picking up the project.</strong> It captures the stack, the non-obvious conventions that <em>will</em> bite you, what's shipped, and how to continue. Sources of truth: the code (<code>src/</code>, <code>src-tauri/</code>) and the <a href="feature_list.html">feature list</a>.</p>
 
-    <div class="note"><strong>State as of this handoff:</strong> branch <code>phase-1-local-infra</code>, HEAD <code>a9d63d0</code>. 4 views, 18 Vue components, 6 Pinia stores, 20 Rust commands, 30 backend tests (all green). Build + lint + clippy clean. <strong>Backup &amp; restore</strong> and <strong>balance recompute</strong> shipped (Tauri dialog plugin + verified file copy; opening-balance migration v4 + recompute-from-history maintenance command).</div>
+    <div class="note"><strong>State as of this handoff:</strong> branch <code>phase-1-local-infra</code>, HEAD <code>5fb04c1</code>. 5 views, 21 Vue components, 8 Pinia stores, 22 Rust commands, 38 backend tests + 11 Vitest (all green). Build + lint + clippy clean. Shipped since the last handoff: <strong>backup &amp; restore</strong>, <strong>balance recompute</strong> (opening-balance migration v4), plus infra polish (lazy-loaded Analytics route, pruned pre-restore backups, a global toast store, and a Vitest harness for the Pinia stores).</div>
+    <div class="crit"><strong>⚠ Mid-epic pause point.</strong> The <strong>envelope-budgeting (YNAB core loop)</strong> epic is <u>partially landed</u>: Wave 0 backend (migration v5 + engine) and Wave 1 T4/T5 (Plan view + move-money) are done, committed, and green. <strong>T6 (income → Ready-to-Assign UX), T7 (dashboard envelope surfacing), T8 (integration), T9 (final docs) are NOT done.</strong> See <a href="#envelope-epic">§7 · Envelope epic status</a> before continuing it.</div>
 
     <!-- ============================================ -->
     <h2>1 · What this is</h2>
@@ -68,13 +69,14 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
 
     <!-- ============================================ -->
     <h2>3 · Data model</h2>
-    <p>Money is always stored as <strong>INTEGER cents</strong>. Schema version tracked via <code>PRAGMA user_version</code>; migrations are append-only in <code>src-tauri/src/db.rs</code> (<code>migrate_v1..v4</code>), each bumping the version independently. <strong>v4</strong> adds <code>accounts.opening_balance</code> (backfilled at migration time as <code>balance − net transaction effect</code>) so balances can be rebuilt from history without wiping the starting balance; it is kept internal to the DB layer (not on the <code>Account</code> IPC struct).</p>
+    <p>Money is always stored as <strong>INTEGER cents</strong>. Schema version tracked via <code>PRAGMA user_version</code>; migrations are append-only in <code>src-tauri/src/db.rs</code> (<code>migrate_v1..v5</code>), each bumping the version independently. <strong>v4</strong> adds <code>accounts.opening_balance</code> (backfilled at migration time as <code>balance − net transaction effect</code>) so balances can be rebuilt from history without wiping the starting balance; it is kept internal to the DB layer (not on the <code>Account</code> IPC struct). <strong>v5</strong> adds <code>category_months</code> for envelope budgeting (see §7 envelope epic) and backfills existing <code>budgets.amount</code> into the current month.</p>
     <table>
       <tr><th>Table</th><th>Key columns</th></tr>
       <tr><td><code>app_profiles</code></td><td>id, profile_name, created_at, db_sync_path</td></tr>
       <tr><td><code>accounts</code></td><td>id, profile_id, name, balance <em>(cents)</em>, currency, type</td></tr>
       <tr><td><code>categories</code></td><td>id, profile_id, name, color_code, type, <strong>parent_id</strong> <em>(v3: NULL = top-level; one level of nesting)</em></td></tr>
-      <tr><td><code>budgets</code></td><td>id, profile_id, category_id, period, amount <em>(cents)</em>, <strong>alert_threshold</strong> <em>(v2: 0–1 fraction)</em></td></tr>
+      <tr><td><code>budgets</code></td><td>id, profile_id, category_id, period, amount <em>(cents)</em>, <strong>alert_threshold</strong> <em>(v2: 0–1 fraction)</em> — <em>legacy fixed-budget model; kept intact, superseded by envelopes</em></td></tr>
+      <tr><td><code>category_months</code></td><td>id, profile_id, category_id, month <em>('YYYY-MM')</em>, assigned <em>(<strong>signed</strong> cents)</em>, UNIQUE(category_id, month) <em>(v5: envelope budgeting)</em></td></tr>
       <tr><td><code>transactions</code></td><td>id, account_id, amount <em>(cents, positive)</em>, category_id, date, note, type, transfer_account_id</td></tr>
     </table>
     <p>Migrations: <strong>v1</strong> core tables · <strong>v2</strong> <code>budgets.alert_threshold</code> · <strong>v3</strong> <code>categories.parent_id</code>. On a <em>fresh</em> DB, seeding adds a "Personal" profile, default categories (incl. example subs under Dining Out), and a default "Cash" account. Seeding is per-entity idempotent, so legacy DBs backfill a default account but do <u>not</u> get example sub-categories (by design).</p>
@@ -123,12 +125,37 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
     </ul>
 
     <!-- ============================================ -->
-    <h2>7 · Continue here <span class="badge b-next">NEXT</span></h2>
-    <p>Committed roadmap (see <a href="feature_list.html">feature_list.html</a> for the full QoL/parked lists). Recommended order:</p>
+    <h2 id="envelope-epic">7 · Envelope-budgeting epic — <span class="badge" style="background:#fef3c7;color:#92400e;">IN PROGRESS</span></h2>
+    <p>Replacing the legacy fixed-amount <code>budgets</code> model with zero-based <strong>envelope budgeting</strong> (Ready to Assign → Assigned → Activity → Available, with monthly rollover and move-money). Paused at the T4/T5 boundary. <strong>v1 scope:</strong> all accounts on-budget; income = inflow to Ready to Assign; credit-card categories &amp; off-budget accounts deferred.</p>
+
+    <table>
+      <tr><th>Task</th><th>Status</th><th>What</th></tr>
+      <tr><td><strong>T1</strong></td><td class="ok">DONE</td><td>Migration v5: <code>category_months</code> + backfill from <code>budgets</code>.</td></tr>
+      <tr><td><strong>T2</strong></td><td class="ok">DONE</td><td>Engine: <code>get_budget_month(month)</code> + <code>set_assigned(categoryId, month, amount)</code>.</td></tr>
+      <tr><td><strong>T3</strong></td><td class="ok">DONE</td><td>IPC/types/store: <code>getBudgetMonth</code>/<code>setAssigned</code>, <code>BudgetMonth</code> types, <code>budgetMonth</code> store.</td></tr>
+      <tr><td><strong>T4</strong></td><td class="ok">DONE</td><td><code>PlanView.vue</code> + <code>plan/EnvelopeRow.vue</code>: sticky RTA header, parent→sub table, inline-edit Assigned, month nav, <code>/plan</code> route + sidebar link.</td></tr>
+      <tr><td><strong>T5</strong></td><td class="ok">DONE</td><td><code>plan/MoveMoneyModal.vue</code>: move funds between envelopes (RTA unchanged).</td></tr>
+      <tr><td><strong>T6</strong></td><td><strong>TODO</strong></td><td>Income → Ready-to-Assign UX in <code>QuickAddModal.vue</code> (type=income shows "goes to Ready to Assign"; hide/sentinel category). No backend change.</td></tr>
+      <tr><td><strong>T7</strong></td><td><strong>TODO</strong></td><td>Dashboard: replace fixed-budget cards with RTA tile + assigned-vs-available + top overspent, from the <code>budgetMonth</code> store. Remove old <code>budgets</code> reads.</td></tr>
+      <tr><td><strong>T8</strong></td><td><strong>TODO</strong></td><td>Integration: full gate + migration test on a populated v4 DB + end-to-end mock walkthrough (assign→spend→rollover→move).</td></tr>
+      <tr><td><strong>T9</strong></td><td><strong>TODO</strong></td><td>Docs: flip this section to SHIPPED, list v2 refinements.</td></tr>
+    </table>
+
+    <div class="crit"><strong>Design decisions a resuming agent MUST honour:</strong>
+      <ul>
+        <li>Envelope <code>assigned</code>/<code>activity</code>/<code>available</code> are <strong>signed</strong> cents. The positive-cents invariant is <u>transaction amounts only</u>.</li>
+        <li><code>set_assigned</code> is an <strong>absolute</strong> upsert (sets the value, not a delta). Inline-edit passes the new total; move-money reads each envelope's current <code>assigned</code> and sets <code>from−X</code> / <code>to+X</code>, so Ready to Assign is unchanged.</li>
+        <li><code>available</code> = cumulative <code>Σ(assigned + activity)</code> for all months ≤ the target month (this <em>is</em> the rollover). <code>readyToAssign</code> = income(≤month) + <code>Σ opening_balance</code> − assigned(≤month, all categories) − uncategorized outflow(≤month). Transfers net to zero.</li>
+        <li>The engine returns a <strong>flat per-category</strong> read model; the Plan view does parent→sub grouping via <code>categoryStore</code>. <strong>Known nuance / refinement for T-later:</strong> a parent row's Assigned cell shows the parent's <em>own</em> assigned while Activity/Available show the <em>group roll-up</em> (own + children) — internally consistent but can read oddly; revisit whether parents should be non-assignable group headers.</li>
+        <li>The legacy <code>budgets</code> table &amp; its CRUD commands are <strong>left intact</strong> (Dashboard/Analytics still read them until T7). Do not drop them mid-epic.</li>
+      </ul>
+    </div>
+
+    <h3>Other committed roadmap (after the epic)</h3>
     <table>
       <tr><th>#</th><th>Feature</th><th>Notes for the implementer</th></tr>
-      <tr><td>1</td><td><strong>CSV bank import</strong></td><td>Rust <code>csv</code> parser, column mapping, preview, dedupe via an import hash. New <code>import_batches</code> table + migration v5.</td></tr>
-      <tr><td>2</td><td><strong>Recurring transactions</strong></td><td>New <code>recurring_rules</code> table (migration v5/v6), post-due-on-launch scheduler, management UI.</td></tr>
+      <tr><td>1</td><td><strong>CSV bank import</strong></td><td>Rust <code>csv</code> parser, column mapping, preview, dedupe via an import hash. New <code>import_batches</code> table + migration v6.</td></tr>
+      <tr><td>2</td><td><strong>Recurring transactions</strong></td><td>New <code>recurring_rules</code> table (migration v6/v7), post-due-on-launch scheduler, management UI.</td></tr>
     </table>
 
     <h3>Recommended workflow (what worked here)</h3>

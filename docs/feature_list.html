@@ -129,19 +129,29 @@
     </table>
 
     <!-- ============================================================= -->
-    <h2>2 · What we want for sure <span class="badge badge-planned">PLANNED</span></h2>
+    <h2>2 · In progress <span class="badge" style="background:#fef3c7;color:#92400e;">PARTIAL</span></h2>
 
-    <h3>Next up (committed)</h3>
+    <table>
+      <thead><tr><th>Feature</th><th>Detail</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Envelope budgeting (YNAB core loop)</strong></td><td>Zero-based budgeting: Ready to Assign → Assigned → Activity → Available, monthly rollover, move-money. Replaces the fixed-amount <code>budgets</code> model.</td><td><strong>~55%.</strong> Backend (v5 schema + engine + store) and the Plan view + move-money modal are done &amp; green. Remaining: income→Ready-to-Assign UX, dashboard envelope surfacing, integration, docs. See <a href="HANDOFF.html#envelope-epic">HANDOFF §7</a>.</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ============================================================= -->
+    <h2>3 · What we want for sure <span class="badge badge-planned">PLANNED</span></h2>
+
+    <h3>Next up (committed, after the envelope epic)</h3>
     <table>
       <thead><tr><th>Feature</th><th>Detail</th><th>Notes</th></tr></thead>
       <tbody>
-        <tr><td><strong>CSV bank import</strong></td><td>Local Rust CSV parser, column mapping, preview, dedupe via import hash, atomic batch insert.</td><td>New <code>import_batches</code> table (migration v5). Next up.</td></tr>
+        <tr><td><strong>CSV bank import</strong></td><td>Local Rust CSV parser, column mapping, preview, dedupe via import hash, atomic batch insert.</td><td>New <code>import_batches</code> table (migration v6).</td></tr>
         <tr><td><strong>Recurring transactions</strong></td><td>Scheduled/auto-repeating entries (rent, salary); post-due on launch; manage rules.</td><td>New <code>recurring_rules</code> table.</td></tr>
       </tbody>
     </table>
 
     <!-- ============================================================= -->
-    <h2>3 · Quality-of-life <span class="badge badge-qol">QoL</span></h2>
+    <h2>4 · Quality-of-life <span class="badge badge-qol">QoL</span></h2>
     <p>Genuinely nice, not committed. Pull any of these up if it earns its place.</p>
     <table>
       <thead><tr><th>Feature</th><th>Why it'd be nice</th></tr></thead>
@@ -160,7 +170,7 @@
     </table>
 
     <!-- ============================================================= -->
-    <h2>4 · Not now <span class="badge badge-deferred">PARKED</span></h2>
+    <h2>5 · Not now <span class="badge badge-deferred">PARKED</span></h2>
     <p>Considered and intentionally parked — revisit when the core is solid or there's a real need.</p>
     <table>
       <thead><tr><th>Feature</th><th>Why parked</th></tr></thead>
@@ -173,7 +183,7 @@
       </tbody>
     </table>
 
-    <div class="note">Status current as of branch <code>phase-1-local-infra</code> @ <code>a9d63d0</code> — Accounts, Analytics, configurable alerts, sub-categories, backup &amp; restore, and balance recompute are all shipped and verified. For stack, conventions, invariants, and the recommended way to continue, see <strong><a href="HANDOFF.html">HANDOFF.html</a></strong>.</div>
+    <div class="note">Status current as of branch <code>phase-1-local-infra</code> @ <code>5fb04c1</code> — Accounts, Analytics, configurable alerts, sub-categories, backup &amp; restore, and balance recompute are shipped and verified; the <strong>envelope-budgeting epic is ~55% landed and paused</strong> (backend + Plan view done; income UX, dashboard, integration, docs remain). For stack, conventions, invariants, the envelope design decisions, and the recommended way to continue, see <strong><a href="HANDOFF.html">HANDOFF.html</a></strong>.</div>
 </div>
 </body>
 </html>
