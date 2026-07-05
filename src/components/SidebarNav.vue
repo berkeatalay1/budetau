@@ -26,6 +26,42 @@
 
     <!-- Nav items -->
     <nav class="flex flex-col gap-[3px] px-[7px] min-[860px]:px-3.5">
+      <!-- Plan (envelope budgeting — primary screen) -->
+      <router-link
+        to="/plan"
+        class="flex items-center gap-[11px] rounded-control px-2.5 py-[9px] text-[13px] font-medium text-secondary hover:bg-accent/10 hover:text-accent transition-colors"
+        active-class="bg-accent/10 !text-accent font-semibold"
+        title="Plan"
+      >
+        <!-- Envelope icon -->
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          class="flex-shrink-0"
+          aria-hidden="true"
+        >
+          <rect
+            x="1"
+            y="2"
+            width="14"
+            height="12"
+            rx="1.5"
+            stroke="currentColor"
+            stroke-width="1.5"
+          />
+          <path
+            d="M1.5 3l6.5 5 6.5-5"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span class="hidden min-[860px]:block">Plan</span>
+      </router-link>
+
       <!-- Dashboard -->
       <router-link
         to="/dashboard"
