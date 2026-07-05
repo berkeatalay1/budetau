@@ -32,6 +32,26 @@ export interface Budget {
   alertThreshold: number
 }
 
+// Envelope budgeting (v5 schema) — the Plan-view read model.
+
+export interface BudgetMonthCategory {
+  categoryId: number
+  name: string
+  /** Signed cents assigned to this category for this month only. */
+  assigned: number
+  /** Signed net effect of this category's transactions this month. */
+  activity: number
+  /** Cumulative rollover through this month; may be negative. */
+  available: number
+}
+
+export interface BudgetMonth {
+  month: string
+  /** Unassigned money available to hand out this month. */
+  readyToAssign: number
+  categories: BudgetMonthCategory[]
+}
+
 export interface Transaction {
   id: number
   accountId: number

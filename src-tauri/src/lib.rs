@@ -45,6 +45,8 @@ pub fn run() {
             commands::create_transaction,
             commands::update_transaction,
             commands::delete_transaction,
+            commands::get_budget_month,
+            commands::set_assigned,
             commands::export_backup,
             commands::restore_backup,
         ])

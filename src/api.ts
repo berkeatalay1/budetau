@@ -7,6 +7,7 @@ import { invoke } from '@tauri-apps/api/core'
 import type {
   Account,
   Budget,
+  BudgetMonth,
   Category,
   NewAccount,
   NewBudget,
@@ -66,6 +67,17 @@ export const updateTransaction = (transaction: Transaction): Promise<Transaction
   invoke('update_transaction', { transaction })
 
 export const deleteTransaction = (id: number): Promise<void> => invoke('delete_transaction', { id })
+
+// --- Envelope budgeting ----------------------------------------------------
+
+/** Fetch the Plan-view read model (per-category assigned/activity/available
+ * plus Ready to Assign) for `month` ('YYYY-MM'). */
+export const getBudgetMonth = (month: string): Promise<BudgetMonth> =>
+  invoke('get_budget_month', { month })
+
+/** Set a category's assigned cents for `month` to an absolute value. */
+export const setAssigned = (categoryId: number, month: string, amount: number): Promise<void> =>
+  invoke('set_assigned', { categoryId, month, amount })
 
 // --- Backup & restore ----------------------------------------------------
 

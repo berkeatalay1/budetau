@@ -24,7 +24,7 @@ pub fn resolve_db_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 /// The current schema version produced by [`init`].
-const CURRENT_SCHEMA_VERSION: i64 = 4;
+const CURRENT_SCHEMA_VERSION: i64 = 5;
 
 /// Initialise a connection: configure pragmas and run pending migrations.
 ///
@@ -65,6 +65,10 @@ fn run_migrations(conn: &Connection) -> rusqlite::Result<()> {
     if version < 4 {
         migrate_v4(conn)?;
         conn.execute_batch("PRAGMA user_version = 4;")?;
+    }
+    if version < 5 {
+        migrate_v5(conn)?;
+        conn.execute_batch("PRAGMA user_version = 5;")?;
     }
 
     debug_assert_eq!(
@@ -170,6 +174,40 @@ fn migrate_v4(conn: &Connection) -> rusqlite::Result<()> {
             - COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'transfer' AND account_id = accounts.id), 0)
             + COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'transfer' AND transfer_account_id = accounts.id), 0)
         );
+        ",
+    )
+}
+
+/// v5: envelope budgeting. `category_months` holds, per category and per
+/// calendar month ('YYYY-MM'), the signed cents *assigned* to that envelope
+/// for that month — the core state for YNAB-style "assign money, then
+/// spend it" budgeting. Unlike transaction amounts (always a positive
+/// magnitude, see invariant ①), `assigned` is signed: money can be
+/// unassigned (moved back to Ready to Assign) as well as assigned.
+///
+/// The old `budgets` table (a single amount per category, no month
+/// dimension) is left in place untouched — nothing reads or writes it
+/// differently after this migration — and is backfilled into the *current*
+/// month's `assigned` so existing budget amounts aren't silently lost when
+/// the new engine (see `commands::get_budget_month`) comes online.
+fn migrate_v5(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS category_months (
+            id          INTEGER PRIMARY KEY,
+            profile_id  INTEGER NOT NULL REFERENCES app_profiles(id),
+            category_id INTEGER NOT NULL REFERENCES categories(id),
+            month       TEXT NOT NULL,               -- 'YYYY-MM'
+            assigned    INTEGER NOT NULL DEFAULT 0,  -- signed cents
+            UNIQUE(category_id, month)
+        );
+        ",
+    )?;
+
+    conn.execute_batch(
+        "
+        INSERT OR IGNORE INTO category_months (profile_id, category_id, month, assigned)
+        SELECT profile_id, category_id, strftime('%Y-%m','now'), amount FROM budgets;
         ",
     )
 }
@@ -625,6 +663,82 @@ mod tests {
             .query_row("SELECT COUNT(*) FROM accounts;", [], |row| row.get(0))
             .unwrap();
         assert_eq!(accounts, 0);
+    }
+
+    #[test]
+    fn migrate_v5_backfills_current_month_assigned_from_budgets() {
+        // A v4 database with a profile, a category, and a legacy `budgets`
+        // row — matching a real upgrade.
+        let conn = Connection::open_in_memory().unwrap();
+        migrate_v1(&conn).unwrap();
+        migrate_v2(&conn).unwrap();
+        migrate_v3(&conn).unwrap();
+        migrate_v4(&conn).unwrap();
+        conn.execute_batch("PRAGMA user_version = 4;").unwrap();
+
+        conn.execute(
+            "INSERT INTO app_profiles (profile_name, created_at) VALUES ('Personal', datetime('now'));",
+            [],
+        )
+        .unwrap();
+        let profile_id = conn.last_insert_rowid();
+
+        conn.execute(
+            "INSERT INTO categories (profile_id, name, type) VALUES (?1, 'Groceries', 'expense');",
+            rusqlite::params![profile_id],
+        )
+        .unwrap();
+        let category_id = conn.last_insert_rowid();
+
+        conn.execute(
+            "INSERT INTO budgets (profile_id, category_id, period, amount) VALUES (?1, ?2, 'monthly', 20000);",
+            rusqlite::params![profile_id, category_id],
+        )
+        .unwrap();
+
+        // `init` applies migration v5, which creates `category_months` and
+        // backfills it from `budgets`.
+        init(&conn).unwrap();
+
+        let version: i64 = conn
+            .query_row("PRAGMA user_version;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(version, CURRENT_SCHEMA_VERSION);
+
+        let current_month: String = conn
+            .query_row("SELECT strftime('%Y-%m','now');", [], |row| row.get(0))
+            .unwrap();
+
+        let assigned: i64 = conn
+            .query_row(
+                "SELECT assigned FROM category_months WHERE category_id = ?1 AND month = ?2;",
+                rusqlite::params![category_id, current_month],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(assigned, 20000, "backfilled assigned should match the budget amount");
+
+        // `budgets` is left in place, untouched.
+        let budgets_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM budgets;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(budgets_count, 1, "the legacy budgets table must not be dropped");
+    }
+
+    #[test]
+    fn migrate_v5_is_a_no_op_on_a_fresh_database_with_no_budgets() {
+        let conn = Connection::open_in_memory().unwrap();
+        init(&conn).unwrap();
+
+        let version: i64 = conn
+            .query_row("PRAGMA user_version;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(version, CURRENT_SCHEMA_VERSION);
+
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM category_months;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 0, "fresh DB has no budgets to backfill");
     }
 
     #[test]

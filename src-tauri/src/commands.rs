@@ -58,6 +58,38 @@ pub struct Budget {
     pub alert_threshold: f64,
 }
 
+/// One expense category's envelope state for a single month — the per-row
+/// read model behind the Plan view. See `get_budget_month` for how each
+/// field is derived.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BudgetMonthCategory {
+    pub category_id: i64,
+    pub name: String,
+    /// Signed cents assigned to this category for this month only (from
+    /// `category_months`).
+    pub assigned: i64,
+    /// Signed net effect of this category's transactions dated in this
+    /// month: income adds, expense subtracts.
+    pub activity: i64,
+    /// Cumulative rollover: `Σ(assigned + activity)` for this category over
+    /// every month up to and including this one. May be negative
+    /// (overspending carries forward).
+    pub available: i64,
+}
+
+/// The envelope-budgeting read model for a single month — one row per
+/// expense category plus the month's Ready to Assign figure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BudgetMonth {
+    pub month: String,
+    /// Unassigned money available to hand out this month (see
+    /// `get_budget_month` for the exact formula).
+    pub ready_to_assign: i64,
+    pub categories: Vec<BudgetMonthCategory>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
@@ -548,6 +580,132 @@ fn recompute_balances_logic(conn: &Connection) -> rusqlite::Result<Vec<Account>>
 }
 
 // ---------------------------------------------------------------------------
+// Envelope budgeting engine — `category_months` (v5) read/write.
+//
+// Money is signed cents here, unlike transaction amounts: an envelope's
+// `assigned`/`activity`/`available` may legitimately go negative (overspend,
+// or money moved back out of a category). Month comparison is done lexically
+// on the 'YYYY-MM' string, which sorts correctly for that format.
+// ---------------------------------------------------------------------------
+
+/// Build the envelope-budgeting read model for `month` ('YYYY-MM'): one row
+/// per expense category (parents and subs alike, ordered by id) plus the
+/// month's Ready to Assign figure.
+///
+/// Per category `C`:
+/// * `assigned` — that category's `category_months.assigned` for exactly
+///   `:month` (0 if no row exists yet).
+/// * `activity` — signed sum of `C`'s transactions dated in `:month`: income
+///   adds, expense subtracts (transfers never carry a category).
+/// * `available` — cumulative rollover: `Σ(assigned + activity)` across
+///   every month `<= :month`, i.e. all of `C`'s assigned cents plus all of
+///   `C`'s transaction activity up to and including `:month`.
+///
+/// Ready to Assign (a single figure, not per-category):
+/// `inflows − Σ assigned(all categories, months <= :month) − uncategorized
+/// outflow(months <= :month)`, where `inflows` is income transactions dated
+/// `<= :month` plus every account's `opening_balance` (all accounts are
+/// on-budget in v1, so opening balances are starting money to assign) and
+/// `uncategorized outflow` is `expense` transactions with no `category_id`
+/// dated `<= :month` (money that left with no envelope reduces what's left
+/// to assign). Transfers between on-budget accounts net to zero and are
+/// ignored throughout.
+pub fn build_budget_month(conn: &Connection, month: &str) -> rusqlite::Result<BudgetMonth> {
+    let mut stmt = conn.prepare(
+        "SELECT
+            c.id,
+            c.name,
+            COALESCE((
+                SELECT cm.assigned FROM category_months cm
+                WHERE cm.category_id = c.id AND cm.month = :month
+            ), 0) AS assigned,
+            COALESCE((
+                SELECT SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END)
+                FROM transactions t
+                WHERE t.category_id = c.id AND substr(t.date, 1, 7) = :month
+            ), 0) AS activity,
+            COALESCE((
+                SELECT SUM(cm.assigned) FROM category_months cm
+                WHERE cm.category_id = c.id AND cm.month <= :month
+            ), 0)
+            +
+            COALESCE((
+                SELECT SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END)
+                FROM transactions t
+                WHERE t.category_id = c.id AND substr(t.date, 1, 7) <= :month
+            ), 0) AS available
+         FROM categories c
+         WHERE c.type = 'expense'
+         ORDER BY c.id;",
+    )?;
+    let categories = stmt
+        .query_map(
+            rusqlite::named_params! { ":month": month },
+            |row| {
+                Ok(BudgetMonthCategory {
+                    category_id: row.get(0)?,
+                    name: row.get(1)?,
+                    assigned: row.get(2)?,
+                    activity: row.get(3)?,
+                    available: row.get(4)?,
+                })
+            },
+        )?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+
+    let ready_to_assign: i64 = conn.query_row(
+        "SELECT
+            COALESCE((
+                SELECT SUM(amount) FROM transactions
+                WHERE type = 'income' AND substr(date, 1, 7) <= :month
+            ), 0)
+            +
+            COALESCE((SELECT SUM(opening_balance) FROM accounts), 0)
+            -
+            COALESCE((
+                SELECT SUM(assigned) FROM category_months WHERE month <= :month
+            ), 0)
+            -
+            COALESCE((
+                SELECT SUM(amount) FROM transactions
+                WHERE type = 'expense' AND category_id IS NULL AND substr(date, 1, 7) <= :month
+            ), 0);",
+        rusqlite::named_params! { ":month": month },
+        |row| row.get(0),
+    )?;
+
+    Ok(BudgetMonth {
+        month: month.to_string(),
+        ready_to_assign,
+        categories,
+    })
+}
+
+/// Set a category's `assigned` cents for `month` to an **absolute** value
+/// (not a delta): upserts `category_months`, overwriting any existing row
+/// for `(category_id, month)`.
+///
+/// Absolute semantics are intentional — a later "move money" feature (moving
+/// funds between two envelopes, or from Ready to Assign) computes each
+/// side's new total from its current `available`/`assigned` and calls this
+/// with the resulting absolute figure, rather than needing a separate
+/// delta-based API.
+pub fn set_assigned_logic(
+    conn: &Connection,
+    category_id: i64,
+    month: &str,
+    amount: i64,
+) -> rusqlite::Result<()> {
+    conn.execute(
+        "INSERT INTO category_months (profile_id, category_id, month, assigned)
+         VALUES ((SELECT profile_id FROM categories WHERE id = ?1), ?1, ?2, ?3)
+         ON CONFLICT(category_id, month) DO UPDATE SET assigned = excluded.assigned;",
+        params![category_id, month, amount],
+    )?;
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
 // Tauri command wrappers — lock state, call logic, map errors to String.
 // ---------------------------------------------------------------------------
 
@@ -682,6 +840,32 @@ pub fn update_transaction(
 pub fn delete_transaction(state: tauri::State<'_, DbState>, id: i64) -> Result<(), String> {
     let mut conn = state.0.lock().map_err(|e| e.to_string())?;
     delete_transaction_logic(&mut conn, id).map_err(|e| e.to_string())
+}
+
+// ---------------------------------------------------------------------------
+// Envelope budgeting — Plan-view read model and the one write path (v1: set
+// an absolute assigned amount). See the plain-fn doc comments above for the
+// exact formulas.
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn get_budget_month(
+    state: tauri::State<'_, DbState>,
+    month: String,
+) -> Result<BudgetMonth, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    build_budget_month(&conn, &month).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_assigned(
+    state: tauri::State<'_, DbState>,
+    category_id: i64,
+    month: String,
+    amount: i64,
+) -> Result<(), String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    set_assigned_logic(&conn, category_id, &month, amount).map_err(|e| e.to_string())
 }
 
 // ---------------------------------------------------------------------------
@@ -1281,5 +1465,165 @@ mod tests {
 
         assert_eq!(balance_of(&conn, checking), 70_000, "source should be debited");
         assert_eq!(balance_of(&conn, savings), 80_000, "destination should be credited");
+    }
+
+    // -----------------------------------------------------------------
+    // Envelope budgeting engine (`get_budget_month` / `set_assigned`).
+    // -----------------------------------------------------------------
+
+    /// A minimal DB for budgeting tests: one profile, one zero-balance
+    /// account (so `opening_balance` doesn't skew `ready_to_assign` maths),
+    /// and one expense category. Returns (conn, account_id, category_id).
+    fn setup_budgeting() -> (Connection, i64, i64) {
+        let conn = Connection::open_in_memory().unwrap();
+        db::init(&conn).unwrap();
+        conn.execute(
+            "INSERT INTO app_profiles (profile_name, created_at) VALUES ('Test', datetime('now'));",
+            [],
+        )
+        .unwrap();
+        let profile_id = conn.last_insert_rowid();
+
+        let account = insert_account(
+            &conn,
+            &NewAccount {
+                profile_id,
+                name: "Checking".into(),
+                balance: 0,
+                currency: "USD".into(),
+                r#type: "checking".into(),
+            },
+        )
+        .unwrap();
+
+        let category = insert_category(
+            &conn,
+            &NewCategory {
+                profile_id,
+                name: "Groceries".into(),
+                color_code: None,
+                r#type: "expense".into(),
+                parent_id: None,
+            },
+        )
+        .unwrap();
+
+        (conn, account.id, category.id)
+    }
+
+    #[test]
+    fn assign_then_spend_yields_expected_available() {
+        let (mut conn, account, category) = setup_budgeting();
+
+        set_assigned_logic(&conn, category, "2026-07", 20_000).unwrap();
+        insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: account,
+                amount: 5_000,
+                category_id: Some(category),
+                date: "2026-07-10".into(),
+                note: None,
+                r#type: "expense".into(),
+                transfer_account_id: None,
+            },
+        )
+        .unwrap();
+
+        let month = build_budget_month(&conn, "2026-07").unwrap();
+        let row = month
+            .categories
+            .iter()
+            .find(|c| c.category_id == category)
+            .unwrap();
+        assert_eq!(row.assigned, 20_000);
+        assert_eq!(row.activity, -5_000);
+        assert_eq!(row.available, 15_000);
+    }
+
+    #[test]
+    fn rollover_carries_leftover_into_next_month() {
+        let (mut conn, account, category) = setup_budgeting();
+
+        // M1: assign 10000, spend 4000.
+        set_assigned_logic(&conn, category, "2026-06", 10_000).unwrap();
+        insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: account,
+                amount: 4_000,
+                category_id: Some(category),
+                date: "2026-06-15".into(),
+                note: None,
+                r#type: "expense".into(),
+                transfer_account_id: None,
+            },
+        )
+        .unwrap();
+
+        // M2: assign another 10000.
+        set_assigned_logic(&conn, category, "2026-07", 10_000).unwrap();
+
+        let month = build_budget_month(&conn, "2026-07").unwrap();
+        let row = month
+            .categories
+            .iter()
+            .find(|c| c.category_id == category)
+            .unwrap();
+        // 6000 carried over (10000 - 4000) + 10000 assigned in M2.
+        assert_eq!(row.available, 16_000);
+    }
+
+    #[test]
+    fn ready_to_assign_responds_to_inflow_and_assignment() {
+        let (conn, _account, category) = setup_budgeting();
+
+        let before = build_budget_month(&conn, "2026-07").unwrap();
+        assert_eq!(before.ready_to_assign, 0);
+
+        // An income transaction raises ready_to_assign by its amount.
+        // Category must be None (income is not tagged to an envelope here).
+        conn.execute(
+            "INSERT INTO transactions (account_id, amount, category_id, date, type) \
+             VALUES ((SELECT id FROM accounts LIMIT 1), 50000, NULL, '2026-07-05', 'income');",
+            [],
+        )
+        .unwrap();
+
+        let after_income = build_budget_month(&conn, "2026-07").unwrap();
+        assert_eq!(after_income.ready_to_assign, 50_000);
+
+        // Assigning to a category lowers ready_to_assign by the same amount.
+        set_assigned_logic(&conn, category, "2026-07", 15_000).unwrap();
+        let after_assign = build_budget_month(&conn, "2026-07").unwrap();
+        assert_eq!(after_assign.ready_to_assign, 50_000 - 15_000);
+    }
+
+    #[test]
+    fn overspend_makes_available_negative() {
+        let (mut conn, account, category) = setup_budgeting();
+
+        set_assigned_logic(&conn, category, "2026-07", 1_000).unwrap();
+        insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: account,
+                amount: 3_000,
+                category_id: Some(category),
+                date: "2026-07-10".into(),
+                note: None,
+                r#type: "expense".into(),
+                transfer_account_id: None,
+            },
+        )
+        .unwrap();
+
+        let month = build_budget_month(&conn, "2026-07").unwrap();
+        let row = month
+            .categories
+            .iter()
+            .find(|c| c.category_id == category)
+            .unwrap();
+        assert_eq!(row.available, -2_000);
     }
 }
