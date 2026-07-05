@@ -712,10 +712,11 @@ pub fn export_backup(
 ///
 /// Steps, all under the DB lock: (1) verify the backup passes
 /// `integrity_check`; (2) take an automatic timestamped backup of the current
-/// database next to it (the UI promises this); (3) drop the live connection,
-/// copy the backup over the live file, then reopen and re-run `init` +
-/// `seed_defaults` so an older-schema backup is migrated forward and the
-/// "at least one account" invariant still holds.
+/// database next to it (the UI promises this), then prune old safety copies so
+/// they don't accumulate; (3) drop the live connection, copy the backup over
+/// the live file, then reopen and re-run `init` + `seed_defaults` so an
+/// older-schema backup is migrated forward and the "at least one account"
+/// invariant still holds.
 #[tauri::command]
 pub fn restore_backup(
     app: AppHandle,
@@ -735,9 +736,13 @@ pub fn restore_backup(
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
-    let auto_backup = db_path.with_file_name(format!("budget-pre-restore-{stamp}.db"));
+    let auto_backup = db_path.with_file_name(format!("{}{stamp}.db", db::PRE_RESTORE_PREFIX));
     std::fs::copy(&db_path, &auto_backup)
         .map_err(|e| format!("failed to back up current database before restore: {e}"))?;
+    // Keep only the most recent safety copies (best-effort; never abort a restore).
+    if let Some(dir) = db_path.parent() {
+        let _ = db::prune_pre_restore_backups(dir, 5);
+    }
 
     // 3. Drop the live connection (placeholder in-memory db) so no handle is
     //    open on the file, overwrite it, then reopen the restored database.

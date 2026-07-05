@@ -4,6 +4,7 @@ import { useQuickAddStore } from '../stores/quickAdd'
 import { useTransactionStore } from '../stores/transaction'
 import { useCategoryStore } from '../stores/category'
 import { useAccountStore } from '../stores/account'
+import { useToastStore } from '../stores/toast'
 import type { QuickAddType } from '../stores/quickAdd'
 import type { NewTransaction } from '../types'
 import { formatCents, todayISO } from '../lib/format'
@@ -13,6 +14,7 @@ const quickAdd = useQuickAddStore()
 const transactionStore = useTransactionStore()
 const categoryStore = useCategoryStore()
 const accountStore = useAccountStore()
+const toast = useToastStore()
 
 // ── Form state ───────────────────────────────────────────────────────────────
 const amountStr = ref('') // raw user input e.g. "12.50"
@@ -135,20 +137,6 @@ function onCategoryKeydown(e: KeyboardEvent) {
   }
 }
 
-// ── Toast ────────────────────────────────────────────────────────────────────
-const toastVisible = ref(false)
-const toastMessage = ref('')
-let toastTimer: ReturnType<typeof setTimeout> | null = null
-
-function showToast(msg: string) {
-  toastMessage.value = msg
-  toastVisible.value = true
-  if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => {
-    toastVisible.value = false
-  }, 3500)
-}
-
 // ── Derived display helpers ──────────────────────────────────────────────────
 const amountCents = computed(() => {
   const v = parseFloat(amountStr.value)
@@ -223,7 +211,7 @@ async function submit() {
         : txType.value === 'transfer'
           ? 'transfer'
           : 'transaction'
-    showToast(`✓ Added ${formatCents(amountCents.value)} to ${catName}`)
+    toast.show(`Added ${formatCents(amountCents.value)} to ${catName}`)
     quickAdd.close()
   } catch (err) {
     errors.value = [err instanceof Error ? err.message : String(err)]
@@ -290,31 +278,6 @@ function closeAutocompleteDelayed() {
 </script>
 
 <template>
-  <!-- Toast: always mounted so it outlives the modal closure -->
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0 translate-y-2"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 translate-y-2"
-    >
-      <div
-        v-if="toastVisible"
-        class="fixed bottom-6 left-1/2 z-[200] -translate-x-1/2 flex items-center gap-3 rounded-[10px] bg-[#1f2937] px-4 py-3 shadow-[0_8px_24px_rgba(16,24,40,.18)]"
-        style="color: #fff"
-      >
-        <div
-          class="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-green text-xs font-bold text-card"
-        >
-          ✓
-        </div>
-        <span class="text-[13px] font-medium" style="color: #fff">{{ toastMessage }}</span>
-      </div>
-    </Transition>
-  </Teleport>
-
   <!-- Modal -->
   <Teleport to="body">
     <Transition

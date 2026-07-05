@@ -286,6 +286,36 @@ pub fn export_to(src: &Path, dst: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// Prefix of the automatic safety copies written before a restore.
+pub const PRE_RESTORE_PREFIX: &str = "budget-pre-restore-";
+
+/// Delete the oldest `budget-pre-restore-*.db` safety copies in `dir`, keeping
+/// only the `keep` most recent, so they don't accumulate without bound.
+///
+/// The filenames embed a Unix-seconds timestamp, which is fixed-width for the
+/// foreseeable future, so a lexical sort is chronological. Best-effort: an
+/// unreadable directory or a failed delete is reported but never aborts a
+/// restore (the caller ignores the result).
+pub fn prune_pre_restore_backups(dir: &Path, keep: usize) -> Result<(), String> {
+    let mut backups: Vec<PathBuf> = std::fs::read_dir(dir)
+        .map_err(|e| format!("cannot read backup directory {}: {e}", dir.display()))?
+        .filter_map(|entry| entry.ok().map(|e| e.path()))
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.starts_with(PRE_RESTORE_PREFIX) && n.ends_with(".db"))
+        })
+        .collect();
+    backups.sort();
+
+    if backups.len() > keep {
+        for old in &backups[..backups.len() - keep] {
+            let _ = std::fs::remove_file(old);
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -595,5 +625,36 @@ mod tests {
             .query_row("SELECT COUNT(*) FROM accounts;", [], |row| row.get(0))
             .unwrap();
         assert_eq!(accounts, 0);
+    }
+
+    #[test]
+    fn prune_keeps_only_the_newest_pre_restore_backups() {
+        let dir = TmpDir::new();
+
+        // Six safety copies with ascending (lexically sortable) timestamps, plus
+        // two unrelated files that must be left alone.
+        for stamp in ["1000000001", "1000000002", "1000000003", "1000000004", "1000000005", "1000000006"] {
+            std::fs::write(dir.join(&format!("{PRE_RESTORE_PREFIX}{stamp}.db")), b"x").unwrap();
+        }
+        std::fs::write(dir.join("budget.db"), b"live").unwrap();
+        std::fs::write(dir.join("my-manual-backup.db"), b"keep").unwrap();
+
+        prune_pre_restore_backups(&dir.0, 2).unwrap();
+
+        // Only the two newest safety copies survive.
+        assert!(!dir.join(&format!("{PRE_RESTORE_PREFIX}1000000004.db")).exists());
+        assert!(dir.join(&format!("{PRE_RESTORE_PREFIX}1000000005.db")).exists());
+        assert!(dir.join(&format!("{PRE_RESTORE_PREFIX}1000000006.db")).exists());
+        // Unrelated files are untouched.
+        assert!(dir.join("budget.db").exists());
+        assert!(dir.join("my-manual-backup.db").exists());
+    }
+
+    #[test]
+    fn prune_is_a_no_op_when_under_the_keep_limit() {
+        let dir = TmpDir::new();
+        std::fs::write(dir.join(&format!("{PRE_RESTORE_PREFIX}1000000001.db")), b"x").unwrap();
+        prune_pre_restore_backups(&dir.0, 5).unwrap();
+        assert!(dir.join(&format!("{PRE_RESTORE_PREFIX}1000000001.db")).exists());
     }
 }

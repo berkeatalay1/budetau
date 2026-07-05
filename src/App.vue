@@ -5,6 +5,7 @@ import { useQuickAddStore } from './stores/quickAdd'
 import SidebarNav from './components/SidebarNav.vue'
 import AppFab from './components/AppFab.vue'
 import QuickAddModal from './components/QuickAddModal.vue'
+import ToastHost from './components/ToastHost.vue'
 
 // Instantiate theme store so the watcher runs and `.dark` is applied on load.
 useThemeStore()
@@ -44,5 +45,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
     <!-- Quick-add modal — mounted once, opened via store -->
     <QuickAddModal />
+
+    <!-- Global toast host — mounted once, driven by the toast store -->
+    <ToastHost />
   </div>
 </template>
