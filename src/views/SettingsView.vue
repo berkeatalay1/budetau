@@ -245,6 +245,22 @@ async function confirmRestore() {
     pendingRestorePath.value = null
   }
 }
+
+// ── Maintenance ───────────────────────────────────────────────────────────────
+const recomputeBusy = ref(false)
+
+async function handleRecomputeBalances() {
+  if (recomputeBusy.value) return
+  recomputeBusy.value = true
+  try {
+    await accountStore.recompute()
+    showToast('Account balances recalculated.')
+  } catch (err) {
+    showToast(`Recalculation failed: ${errMessage(err)}`, true)
+  } finally {
+    recomputeBusy.value = false
+  }
+}
 </script>
 
 <template>
@@ -536,6 +552,23 @@ async function confirmRestore() {
             makes an automatic backup first.
           </p>
         </div>
+      </div>
+
+      <!-- ── Maintenance card ────────────────────────────────────────────── -->
+      <div class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card">
+        <h2 class="mb-1 text-[15px] font-semibold text-primary">Maintenance</h2>
+        <p class="mb-4 text-[13px] leading-relaxed text-secondary">
+          Rebuild account balances from transaction history.
+        </p>
+
+        <button
+          type="button"
+          class="rounded-control border border-border bg-card px-4 py-[10px] text-[13px] font-semibold text-primary transition-colors hover:bg-bg disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="recomputeBusy"
+          @click="handleRecomputeBalances"
+        >
+          {{ recomputeBusy ? 'Recalculating…' : 'Recalculate balances' }}
+        </button>
       </div>
     </div>
   </div>

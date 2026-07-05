@@ -24,7 +24,7 @@ pub fn resolve_db_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 /// The current schema version produced by [`init`].
-const CURRENT_SCHEMA_VERSION: i64 = 3;
+const CURRENT_SCHEMA_VERSION: i64 = 4;
 
 /// Initialise a connection: configure pragmas and run pending migrations.
 ///
@@ -61,6 +61,10 @@ fn run_migrations(conn: &Connection) -> rusqlite::Result<()> {
     if version < 3 {
         migrate_v3(conn)?;
         conn.execute_batch("PRAGMA user_version = 3;")?;
+    }
+    if version < 4 {
+        migrate_v4(conn)?;
+        conn.execute_batch("PRAGMA user_version = 4;")?;
     }
 
     debug_assert_eq!(
@@ -139,6 +143,37 @@ fn migrate_v3(conn: &Connection) -> rusqlite::Result<()> {
     )
 }
 
+/// v4: an explicit `opening_balance` column on `accounts`, laying the
+/// groundwork for a balance-recompute maintenance command (see
+/// `commands::recompute_balances`). Previously the starting balance was only
+/// ever baked into `balance` at account creation and had no independent
+/// record, so `balance` alone could not be safely rebuilt from transaction
+/// history without wiping it.
+///
+/// After adding the column (defaulting new/existing rows to 0), backfill each
+/// existing account's `opening_balance` by subtracting that account's net
+/// transaction effect from its current `balance` — recovering the presumed
+/// starting balance at migration time. The net effect mirrors
+/// `commands::adjust_balances` exactly: income adds, expense subtracts,
+/// transfer subtracts from the source and adds to the destination.
+///
+/// `opening_balance` is intentionally NOT exposed on the `Account` struct or
+/// IPC surface — it is an internal detail of the recompute SQL.
+fn migrate_v4(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute_batch("ALTER TABLE accounts ADD COLUMN opening_balance INTEGER NOT NULL DEFAULT 0;")?;
+
+    conn.execute_batch(
+        "
+        UPDATE accounts SET opening_balance = balance - (
+            COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'income' AND account_id = accounts.id), 0)
+            - COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'expense' AND account_id = accounts.id), 0)
+            - COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'transfer' AND account_id = accounts.id), 0)
+            + COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'transfer' AND transfer_account_id = accounts.id), 0)
+        );
+        ",
+    )
+}
+
 /// Seed first-run defaults: a profile, a handful of flat categories, and a
 /// default account.
 ///
@@ -204,8 +239,8 @@ pub fn seed_defaults(conn: &Connection) -> rusqlite::Result<()> {
         conn.query_row("SELECT COUNT(*) FROM accounts;", [], |row| row.get(0))?;
     if account_count == 0 {
         conn.execute(
-            "INSERT INTO accounts (profile_id, name, balance, currency, type) \
-             VALUES (?1, 'Cash', 0, 'USD', 'cash');",
+            "INSERT INTO accounts (profile_id, name, balance, currency, type, opening_balance) \
+             VALUES (?1, 'Cash', 0, 'USD', 'cash', 0);",
             rusqlite::params![profile_id],
         )?;
     }
@@ -472,5 +507,93 @@ mod tests {
             .query_row("PRAGMA user_version;", [], |row| row.get(0))
             .unwrap();
         assert_eq!(version, CURRENT_SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn migrate_v4_backfills_opening_balance_from_transaction_history() {
+        // Build a v3 database by hand (pre-opening_balance), matching how a
+        // real upgrade would look: an account whose `balance` already
+        // reflects some transaction history, but with no independent record
+        // of what its starting balance was.
+        let conn = Connection::open_in_memory().unwrap();
+        migrate_v1(&conn).unwrap();
+        migrate_v2(&conn).unwrap();
+        migrate_v3(&conn).unwrap();
+        conn.execute_batch("PRAGMA user_version = 3;").unwrap();
+
+        conn.execute(
+            "INSERT INTO app_profiles (profile_name, created_at) VALUES ('Personal', datetime('now'));",
+            [],
+        )
+        .unwrap();
+        let profile_id = conn.last_insert_rowid();
+
+        // Started at $1,000.00, then a $25.00 expense and a $70.00 income:
+        // current balance = 100_000 - 2_500 + 7_000 = 104_500.
+        conn.execute(
+            "INSERT INTO accounts (profile_id, name, balance, currency, type) \
+             VALUES (?1, 'Checking', 104500, 'USD', 'checking');",
+            rusqlite::params![profile_id],
+        )
+        .unwrap();
+        let account_id = conn.last_insert_rowid();
+
+        conn.execute(
+            "INSERT INTO transactions (account_id, amount, date, type) \
+             VALUES (?1, 2500, '2026-06-25', 'expense');",
+            rusqlite::params![account_id],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO transactions (account_id, amount, date, type) \
+             VALUES (?1, 7000, '2026-06-25', 'income');",
+            rusqlite::params![account_id],
+        )
+        .unwrap();
+
+        // `init` applies migration v4, which adds and backfills
+        // `opening_balance`.
+        init(&conn).unwrap();
+
+        let version: i64 = conn
+            .query_row("PRAGMA user_version;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(version, CURRENT_SCHEMA_VERSION);
+
+        let opening: i64 = conn
+            .query_row(
+                "SELECT opening_balance FROM accounts WHERE id = ?1;",
+                [account_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(opening, 100_000, "backfilled opening balance should recover the starting balance");
+
+        // A recompute afterwards must leave the balance unchanged — no drift
+        // was introduced by the backfill.
+        let balance: i64 = conn
+            .query_row("SELECT balance FROM accounts WHERE id = ?1;", [account_id], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(balance, 104_500);
+    }
+
+    #[test]
+    fn migrate_v4_is_a_no_op_on_a_fresh_database_with_no_accounts() {
+        // On a brand-new DB there are no accounts yet at migration time, so
+        // the backfill UPDATE simply touches zero rows.
+        let conn = Connection::open_in_memory().unwrap();
+        init(&conn).unwrap();
+
+        let version: i64 = conn
+            .query_row("PRAGMA user_version;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(version, CURRENT_SCHEMA_VERSION);
+
+        let accounts: i64 = conn
+            .query_row("SELECT COUNT(*) FROM accounts;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(accounts, 0);
     }
 }

@@ -55,6 +55,9 @@ export const updateAccount = (account: Account): Promise<Account> =>
 
 export const deleteAccount = (id: number): Promise<void> => invoke('delete_account', { id })
 
+/** Rebuild every account's balance from its transaction history. */
+export const recomputeBalances = (): Promise<Account[]> => invoke('recompute_balances')
+
 export const updateBudget = (budget: Budget): Promise<Budget> => invoke('update_budget', { budget })
 
 export const deleteBudget = (id: number): Promise<void> => invoke('delete_budget', { id })

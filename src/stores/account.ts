@@ -1,7 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Account, NewAccount } from '../types'
-import { createAccount, deleteAccount, listAccounts, updateAccount } from '../api'
+import {
+  createAccount,
+  deleteAccount,
+  listAccounts,
+  recomputeBalances,
+  updateAccount,
+} from '../api'
 
 export const useAccountStore = defineStore('account', () => {
   const data = ref<Account[]>([])
@@ -38,5 +44,12 @@ export const useAccountStore = defineStore('account', () => {
     await fetchAll()
   }
 
-  return { data, isLoading, error, fetchAll, add, update, remove }
+  /** Rebuild every account's balance from transaction history. */
+  async function recompute(): Promise<Account[]> {
+    const recomputed = await recomputeBalances()
+    data.value = recomputed
+    return recomputed
+  }
+
+  return { data, isLoading, error, fetchAll, add, update, remove, recompute }
 })

@@ -123,6 +123,8 @@
         <tr><td><strong>Configurable budget alerts</strong> <span class="check">✓</span></td><td>Per-budget "alert at X%"; Manage Budgets modal to edit/delete.</td></tr>
         <tr><td><strong>Sub-categories</strong> <span class="check">✓</span></td><td>One level (parent → sub); roll-up to the parent budget; across manager, quick-add, analytics drill-down, and transactions.</td></tr>
         <tr><td><strong>Amount-sign hardening</strong> <span class="check">✓</span></td><td>Amounts stored as positive magnitude (sign from <code>type</code>); backend abs-guards insert/update so balances can't be corrupted.</td></tr>
+        <tr><td><strong>Backup &amp; restore</strong> <span class="check">✓</span></td><td>Settings: export a verified timestamped copy or restore from a file (Tauri dialog plugin). <code>integrity_check</code> on both sides; restore confirms, auto-backs-up the current DB, migrates an older backup forward, then reloads.</td></tr>
+        <tr><td><strong>Balance recompute utility</strong> <span class="check">✓</span></td><td>Settings → Maintenance: rebuild every <code>accounts.balance</code> from <code>opening_balance</code> + transaction history (migration v4 adds/backfills <code>opening_balance</code>). Safety net against incremental-balance drift.</td></tr>
       </tbody>
     </table>
 
@@ -133,9 +135,7 @@
     <table>
       <thead><tr><th>Feature</th><th>Detail</th><th>Notes</th></tr></thead>
       <tbody>
-        <tr><td><strong>Backup &amp; restore</strong></td><td>Export a timestamped copy of the DB and restore from one, with an integrity check.</td><td>Settings buttons exist (disabled); backend + file dialog to come.</td></tr>
-        <tr><td><strong>Balance recompute utility</strong></td><td>Rebuild <code>accounts.balance</code> from transactions — a safety net against incremental-balance drift.</td><td>Cheap, high value (see HANDOFF invariant ②).</td></tr>
-        <tr><td><strong>CSV bank import</strong></td><td>Local Rust CSV parser, column mapping, preview, dedupe via import hash, atomic batch insert.</td><td>New <code>import_batches</code> table (migration v4).</td></tr>
+        <tr><td><strong>CSV bank import</strong></td><td>Local Rust CSV parser, column mapping, preview, dedupe via import hash, atomic batch insert.</td><td>New <code>import_batches</code> table (migration v5). Next up.</td></tr>
         <tr><td><strong>Recurring transactions</strong></td><td>Scheduled/auto-repeating entries (rent, salary); post-due on launch; manage rules.</td><td>New <code>recurring_rules</code> table.</td></tr>
       </tbody>
     </table>
@@ -173,7 +173,7 @@
       </tbody>
     </table>
 
-    <div class="note">Status current as of branch <code>phase-1-local-infra</code> @ <code>fe435cd</code> — Accounts, Analytics, configurable alerts, and sub-categories are all shipped and verified. For stack, conventions, invariants, and the recommended way to continue, see <strong><a href="HANDOFF.html">HANDOFF.html</a></strong>.</div>
+    <div class="note">Status current as of branch <code>phase-1-local-infra</code> @ <code>a9d63d0</code> — Accounts, Analytics, configurable alerts, sub-categories, backup &amp; restore, and balance recompute are all shipped and verified. For stack, conventions, invariants, and the recommended way to continue, see <strong><a href="HANDOFF.html">HANDOFF.html</a></strong>.</div>
 </div>
 </body>
 </html>

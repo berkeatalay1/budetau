@@ -35,6 +35,7 @@ pub fn run() {
             commands::create_account,
             commands::update_account,
             commands::delete_account,
+            commands::recompute_balances,
             commands::create_category,
             commands::update_category,
             commands::delete_category,

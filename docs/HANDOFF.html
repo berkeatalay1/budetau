@@ -37,7 +37,7 @@
     <h1>Budetau — Engineering Handoff &amp; Continuation Plan</h1>
     <p><strong>Read this first if you are a new agent or developer picking up the project.</strong> It captures the stack, the non-obvious conventions that <em>will</em> bite you, what's shipped, and how to continue. Sources of truth: the code (<code>src/</code>, <code>src-tauri/</code>) and the <a href="feature_list.html">feature list</a>.</p>
 
-    <div class="note"><strong>State as of this handoff:</strong> branch <code>phase-1-local-infra</code>, HEAD <code>fe435cd</code>. 4 views, 18 Vue components, 6 Pinia stores, 18 Rust commands, 22 backend tests (all green). Build + lint + clippy clean.</div>
+    <div class="note"><strong>State as of this handoff:</strong> branch <code>phase-1-local-infra</code>, HEAD <code>a9d63d0</code>. 4 views, 18 Vue components, 6 Pinia stores, 20 Rust commands, 30 backend tests (all green). Build + lint + clippy clean. <strong>Backup &amp; restore</strong> and <strong>balance recompute</strong> shipped (Tauri dialog plugin + verified file copy; opening-balance migration v4 + recompute-from-history maintenance command).</div>
 
     <!-- ============================================ -->
     <h2>1 · What this is</h2>
@@ -62,13 +62,13 @@ npm run build        # vue-tsc --noEmit && vite build  (strict: noUnusedLocals/P
 npm run lint         # eslint . --fix
 
 # backend gate
-cd src-tauri && cargo test          # 22 tests
+cd src-tauri && cargo test          # 30 tests
 cd src-tauri && cargo clippy -- -D warnings</code></pre>
     <p>Network/build commands need sandbox escape in this environment (<code>dangerouslyDisableSandbox</code>). The DB auto-creates and migrates on first launch.</p>
 
     <!-- ============================================ -->
     <h2>3 · Data model</h2>
-    <p>Money is always stored as <strong>INTEGER cents</strong>. Schema version tracked via <code>PRAGMA user_version</code>; migrations are append-only in <code>src-tauri/src/db.rs</code> (<code>migrate_v1..v3</code>), each bumping the version independently.</p>
+    <p>Money is always stored as <strong>INTEGER cents</strong>. Schema version tracked via <code>PRAGMA user_version</code>; migrations are append-only in <code>src-tauri/src/db.rs</code> (<code>migrate_v1..v4</code>), each bumping the version independently. <strong>v4</strong> adds <code>accounts.opening_balance</code> (backfilled at migration time as <code>balance − net transaction effect</code>) so balances can be rebuilt from history without wiping the starting balance; it is kept internal to the DB layer (not on the <code>Account</code> IPC struct).</p>
     <table>
       <tr><th>Table</th><th>Key columns</th></tr>
       <tr><td><code>app_profiles</code></td><td>id, profile_name, created_at, db_sync_path</td></tr>
@@ -84,7 +84,7 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
 
     <div class="crit"><strong>① Transaction amounts are a POSITIVE magnitude.</strong> The sign comes from <code>type</code> (expense subtracts, income adds, transfer moves between accounts). <u>Never store a signed amount.</u> The backend (<code>insert_transaction</code> / <code>update_transaction_logic</code> / <code>adjust_balances</code>) defensively <code>.abs()</code>es it. A signed amount inverts the dashboard net and corrupts balances — this was a real bug (fixed in <code>fe435cd</code>).</div>
 
-    <div class="crit"><strong>② Balances are mutated incrementally, not recomputed.</strong> Insert/update/delete adjust <code>accounts.balance</code> atomically inside one rusqlite transaction. This is fast but fragile: a bad write can drift a balance. <strong>Recommended next hardening:</strong> a "recalculate balances from transactions" maintenance command. There is no separate "opening balance" column — the account's starting balance is baked into <code>balance</code> at creation.</div>
+    <div class="crit"><strong>② Balances are mutated incrementally, not recomputed.</strong> Insert/update/delete adjust <code>accounts.balance</code> atomically inside one rusqlite transaction. This is fast but fragile: a bad write can drift a balance. <strong>Safety net (shipped):</strong> the <code>recompute_balances</code> command (Settings → Maintenance) rebuilds every <code>accounts.balance</code> as <code>opening_balance + net transaction effect</code>. The starting balance is preserved via the <code>accounts.opening_balance</code> column (migration v4) — set equal to <code>balance</code> on account creation — since there is no separate user-editable "opening balance" field.</div>
 
     <div class="crit"><strong>③ Prettier config is <code>semi:false</code>.</strong> NEVER write multi-statement inline template handlers like <code>@click="a = 1; b = 2"</code> — Prettier strips the semicolons and reformats into invalid code that breaks the Vue compiler. <u>Always extract to a method</u> and use <code>@click="myMethod"</code>. This broke the build twice.</div>
 
@@ -93,8 +93,8 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
     <h3>IPC contract</h3>
     <ul>
       <li>Rust structs use <code>#[serde(rename_all = "camelCase")]</code>; frontend types in <code>src/types/index.ts</code> mirror them.</li>
-      <li>All 18 commands return <code>Result&lt;T, String&gt;</code>; typed wrappers in <code>src/api.ts</code>; Pinia stores own mutations and re-fetch affected stores (e.g. transaction mutations refresh accounts).</li>
-      <li>Commands: <code>get_db_path</code>, list/create/update/delete for accounts, categories, budgets, transactions (delete guards: account/category in use is refused).</li>
+      <li>All 20 commands return <code>Result&lt;T, String&gt;</code>; typed wrappers in <code>src/api.ts</code>; Pinia stores own mutations and re-fetch affected stores (e.g. transaction mutations refresh accounts).</li>
+      <li>Commands: <code>get_db_path</code>, list/create/update/delete for accounts, categories, budgets, transactions (delete guards: account/category in use is refused), plus <code>export_backup</code>/<code>restore_backup</code> (file copy + <code>integrity_check</code>; restore auto-backs-up first, then re-runs <code>init</code>+<code>seed_defaults</code> to migrate an older backup forward) and <code>recompute_balances</code> (rebuilds balances from history; returns the refreshed accounts).</li>
     </ul>
 
     <!-- ============================================ -->
@@ -118,6 +118,8 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
       <li><strong>Analytics:</strong> ApexCharts cash-flow, spending donut with parent→sub drill-down, monthly-net.</li>
       <li><strong>Accounts</strong> &amp; <strong>Category</strong> management (Settings); <strong>budgets</strong> create/edit/delete with per-budget alert threshold.</li>
       <li><strong>Sub-categories:</strong> one level (parent → sub), roll-up to parent budget, across all four surfaces.</li>
+      <li><strong>Backup &amp; restore</strong> (Settings): export a verified timestamped copy, or restore from a file — Tauri dialog plugin for picking, <code>integrity_check</code> on both sides, restore confirms first and auto-backs-up the current DB, then reloads.</li>
+      <li><strong>Balance recompute</strong> (Settings → Maintenance): one-click rebuild of every account balance from <code>opening_balance</code> + transaction history — a safety net against invariant ② drift.</li>
     </ul>
 
     <!-- ============================================ -->
@@ -125,10 +127,8 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
     <p>Committed roadmap (see <a href="feature_list.html">feature_list.html</a> for the full QoL/parked lists). Recommended order:</p>
     <table>
       <tr><th>#</th><th>Feature</th><th>Notes for the implementer</th></tr>
-      <tr><td>1</td><td><strong>Backup &amp; restore</strong></td><td>Settings has disabled placeholder buttons. Needs Rust <code>export_backup</code>/<code>restore_backup</code> (file copy + <code>PRAGMA integrity_check</code>) and the Tauri dialog plugin for file picking.</td></tr>
-      <tr><td>2</td><td><strong>Balance recompute utility</strong></td><td>Maintenance command to rebuild <code>accounts.balance</code> from transactions (addresses invariant ② drift). Cheap, high-value safety net.</td></tr>
-      <tr><td>3</td><td><strong>CSV bank import</strong></td><td>Rust <code>csv</code> parser, column mapping, preview, dedupe via an import hash. New <code>import_batches</code> table + migration v4.</td></tr>
-      <tr><td>4</td><td><strong>Recurring transactions</strong></td><td>New <code>recurring_rules</code> table (migration v4/v5), post-due-on-launch scheduler, management UI.</td></tr>
+      <tr><td>1</td><td><strong>CSV bank import</strong></td><td>Rust <code>csv</code> parser, column mapping, preview, dedupe via an import hash. New <code>import_batches</code> table + migration v5.</td></tr>
+      <tr><td>2</td><td><strong>Recurring transactions</strong></td><td>New <code>recurring_rules</code> table (migration v5/v6), post-due-on-launch scheduler, management UI.</td></tr>
     </table>
 
     <h3>Recommended workflow (what worked here)</h3>
@@ -141,7 +141,7 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
     <!-- ============================================ -->
     <h2>8 · Known issues / gotchas</h2>
     <ul>
-      <li><strong>Balance drift</strong> (invariant ②) — no recompute utility yet. Top of the backlog.</li>
+      <li><strong>Balance drift</strong> (invariant ②) — mitigated by the <code>recompute_balances</code> maintenance command (Settings → Maintenance). It is manual, not automatic; a bad write still drifts until the user runs it.</li>
       <li><strong>ApexCharts bundle</strong> ~518 kB → one chunk-size build warning. Harmless for desktop; lazy-load the Analytics route to silence it.</li>
       <li><strong>"Current month" captured at mount</strong> in Dashboard/Analytics — won't auto-advance past midnight if left open. Pre-existing, minor.</li>
       <li><strong>Stray git worktree:</strong> an agent left one under <code>.claude/worktrees/</code> (gitignored). eslint now ignores <code>.claude/**</code>; remove with <code>git worktree remove</code> if it bothers you.</li>

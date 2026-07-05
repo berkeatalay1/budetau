@@ -243,10 +243,15 @@ fn fetch_transaction(conn: &Connection, id: i64) -> rusqlite::Result<Transaction
     )
 }
 
+/// Insert a new account. `opening_balance` is set equal to `balance` at
+/// creation time — there are no transactions yet, so the starting balance
+/// and the opening balance are the same value. `opening_balance` is an
+/// internal DB-layer column only (see `db::migrate_v4`); it is never exposed
+/// on the `Account` struct or the IPC surface.
 fn insert_account(conn: &Connection, new: &NewAccount) -> rusqlite::Result<Account> {
     conn.execute(
-        "INSERT INTO accounts (profile_id, name, balance, currency, type) \
-         VALUES (?1, ?2, ?3, ?4, ?5);",
+        "INSERT INTO accounts (profile_id, name, balance, currency, type, opening_balance) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?3);",
         params![new.profile_id, new.name, new.balance, new.currency, new.r#type],
     )?;
     fetch_account(conn, conn.last_insert_rowid())
@@ -517,6 +522,31 @@ fn delete_transaction_logic(conn: &mut Connection, id: i64) -> rusqlite::Result<
     Ok(())
 }
 
+/// Rebuild every account's `balance` from `opening_balance` plus the net
+/// effect of its transaction history, as a safety net against the
+/// incremental-balance drift described by invariant ② (balances are mutated
+/// incrementally on every insert/update/delete, never recomputed from
+/// scratch — a bad write can drift a balance out of sync).
+///
+/// The net effect per account mirrors `adjust_balances` exactly: `income`
+/// adds, `expense` subtracts, `transfer` subtracts from the source
+/// (`account_id`) and adds to the destination (`transfer_account_id`). Using
+/// `opening_balance` (rather than recomputing from transactions alone) is
+/// what preserves each account's starting balance — see `db::migrate_v4`.
+fn recompute_balances_logic(conn: &Connection) -> rusqlite::Result<Vec<Account>> {
+    conn.execute_batch(
+        "
+        UPDATE accounts SET balance = opening_balance + (
+            COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'income' AND account_id = accounts.id), 0)
+            - COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'expense' AND account_id = accounts.id), 0)
+            - COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'transfer' AND account_id = accounts.id), 0)
+            + COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'transfer' AND transfer_account_id = accounts.id), 0)
+        );
+        ",
+    )?;
+    select_accounts(conn)
+}
+
 // ---------------------------------------------------------------------------
 // Tauri command wrappers — lock state, call logic, map errors to String.
 // ---------------------------------------------------------------------------
@@ -574,6 +604,15 @@ pub fn update_account(
 pub fn delete_account(state: tauri::State<'_, DbState>, id: i64) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     delete_account_logic(&conn, id).map_err(|e| e.to_string())
+}
+
+/// Rebuild every account's `balance` from scratch against its transaction
+/// history — a maintenance action for the Settings "Recalculate balances"
+/// button, guarding against the incremental-update drift in invariant ②.
+#[tauri::command]
+pub fn recompute_balances(state: tauri::State<'_, DbState>) -> Result<Vec<Account>, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    recompute_balances_logic(&conn).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -1142,5 +1181,100 @@ mod tests {
         let u = update_transaction_logic(&mut conn, &edited).unwrap();
         assert_eq!(u.amount, 4_000);
         assert_eq!(balance_of(&conn, checking), 100_000 - 4_000);
+    }
+
+    #[test]
+    fn recompute_fixes_drift_from_a_corrupted_balance() {
+        let (mut conn, checking, savings) = setup();
+
+        insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: checking,
+                amount: 2_500,
+                category_id: None,
+                date: "2026-06-25".into(),
+                note: None,
+                r#type: "expense".into(),
+                transfer_account_id: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(balance_of(&conn, checking), 97_500);
+
+        // Directly corrupt the balance with a raw UPDATE, bypassing
+        // adjust_balances entirely — simulating the drift invariant ② warns
+        // about.
+        conn.execute(
+            "UPDATE accounts SET balance = 999_999 WHERE id = ?1;",
+            params![checking],
+        )
+        .unwrap();
+        assert_eq!(balance_of(&conn, checking), 999_999);
+
+        let recomputed = recompute_balances_logic(&conn).unwrap();
+
+        assert_eq!(balance_of(&conn, checking), 97_500, "recompute should undo the corruption");
+        assert_eq!(balance_of(&conn, savings), 50_000, "untouched account should be unaffected");
+
+        let checking_out = recomputed.iter().find(|a| a.id == checking).unwrap();
+        assert_eq!(checking_out.balance, 97_500, "returned accounts should reflect the fix");
+    }
+
+    #[test]
+    fn recompute_preserves_opening_balance_not_just_transaction_sum() {
+        let (mut conn, checking, _savings) = setup();
+        // setup() creates `checking` with balance 100_000 (its opening
+        // balance) and no transactions yet.
+
+        insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: checking,
+                amount: 2_500,
+                category_id: None,
+                date: "2026-06-25".into(),
+                note: None,
+                r#type: "expense".into(),
+                transfer_account_id: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(balance_of(&conn, checking), 97_500);
+
+        recompute_balances_logic(&conn).unwrap();
+
+        // Must stay 97_500 (opening_balance 100_000 - 2_500), NOT 2_500
+        // (transaction sum alone) and NOT -2_500.
+        assert_eq!(balance_of(&conn, checking), 97_500);
+    }
+
+    #[test]
+    fn recompute_accounts_for_both_sides_of_a_transfer() {
+        let (mut conn, checking, savings) = setup();
+
+        insert_transaction(
+            &mut conn,
+            &NewTransaction {
+                account_id: checking,
+                amount: 30_000,
+                category_id: None,
+                date: "2026-06-25".into(),
+                note: None,
+                r#type: "transfer".into(),
+                transfer_account_id: Some(savings),
+            },
+        )
+        .unwrap();
+        assert_eq!(balance_of(&conn, checking), 70_000);
+        assert_eq!(balance_of(&conn, savings), 80_000);
+
+        // Corrupt both sides.
+        conn.execute("UPDATE accounts SET balance = 0;", []).unwrap();
+
+        recompute_balances_logic(&conn).unwrap();
+
+        assert_eq!(balance_of(&conn, checking), 70_000, "source should be debited");
+        assert_eq!(balance_of(&conn, savings), 80_000, "destination should be credited");
     }
 }
