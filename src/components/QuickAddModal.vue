@@ -167,6 +167,17 @@ const amountPrefixClass = computed(() =>
 
 const amountPrefix = computed(() => (txType.value === 'income' ? '+$' : '$'))
 
+// Income is never budgeted to a category at entry time — it's an inflow to
+// Ready to Assign (see docs/HANDOFF.html §7). Clear any category the user had
+// picked while on Expense so a stale id can't leak into the income payload.
+watch(txType, (type) => {
+  if (type === 'income') {
+    selectedCategoryId.value = null
+    categoryQuery.value = ''
+    closeAutocomplete()
+  }
+})
+
 // ── Validation ───────────────────────────────────────────────────────────────
 const errors = ref<string[]>([])
 
@@ -179,7 +190,7 @@ function validate(): boolean {
   errors.value = []
   if (!amountCents.value || amountCents.value <= 0)
     errors.value.push('Amount is required and must be positive.')
-  if (txType.value !== 'transfer' && !selectedCategoryId.value)
+  if (txType.value === 'expense' && !selectedCategoryId.value)
     errors.value.push('Category is required.')
   if (txType.value === 'transfer' && !transferAccountId.value)
     errors.value.push('Destination account is required for transfers.')
@@ -198,26 +209,28 @@ async function submit() {
     const payload: NewTransaction = {
       accountId: resolvedAccountId.value as number,
       amount: amountCents.value,
-      categoryId: selectedCategoryId.value,
+      categoryId: txType.value === 'income' ? null : selectedCategoryId.value,
       date: date.value,
       note: note.value.trim() || null,
       type: txType.value,
       transferAccountId: txType.value === 'transfer' ? transferAccountId.value : null,
     }
     await transactionStore.add(payload)
-    const catName =
-      selectedCategoryId.value != null
-        ? categoryStore.displayPath(selectedCategoryId.value)
-        : txType.value === 'transfer'
-          ? 'transfer'
-          : 'transaction'
-    toast.show(`Added ${formatCents(amountCents.value)} to ${catName}`)
+    toast.show(`Added ${formatCents(amountCents.value)} to ${destinationLabel()}`)
     quickAdd.close()
   } catch (err) {
     errors.value = [err instanceof Error ? err.message : String(err)]
   } finally {
     isSubmitting.value = false
   }
+}
+
+/** Human-readable destination for the success toast. */
+function destinationLabel(): string {
+  if (txType.value === 'income') return 'Ready to Assign'
+  if (txType.value === 'transfer') return 'transfer'
+  if (selectedCategoryId.value != null) return categoryStore.displayPath(selectedCategoryId.value)
+  return 'transaction'
 }
 
 // ── Reset on open ─────────────────────────────────────────────────────────────
@@ -338,8 +351,8 @@ function closeAutocompleteDelayed() {
 
             <!-- Category + Date row (when details are shown, side by side) -->
             <div :class="showDetails ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-4'">
-              <!-- Category autocomplete -->
-              <div class="relative">
+              <!-- Category autocomplete (expense/transfer only — income skips category) -->
+              <div v-if="txType !== 'income'" class="relative">
                 <label class="mb-[7px] block text-[12px] font-semibold text-secondary"
                   >Category</label
                 >
@@ -411,6 +424,22 @@ function closeAutocompleteDelayed() {
                     </button>
                   </template>
                 </div>
+              </div>
+
+              <!-- Income: "Ready to Assign" affordance in place of the category picker -->
+              <div v-else>
+                <label class="mb-[7px] block text-[12px] font-semibold text-secondary"
+                  >Goes to</label
+                >
+                <div
+                  class="flex h-[42px] items-center gap-2 rounded-control border border-green/30 bg-green/10 px-3"
+                >
+                  <span class="h-[9px] w-[9px] flex-none rounded-full bg-green" />
+                  <span class="text-[14px] font-semibold text-green">Ready to Assign</span>
+                </div>
+                <p class="mt-[6px] text-[11px] leading-snug text-secondary">
+                  Income isn't budgeted to a category — assign it on the Plan screen.
+                </p>
               </div>
 
               <!-- Date -->

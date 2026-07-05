@@ -20,6 +20,21 @@ const categoryStore = useCategoryStore()
 
 const isHovered = ref(false)
 
+/**
+ * Category label for display purposes only. Income is never budgeted to a
+ * category at entry time — it's an inflow to Ready to Assign (see
+ * docs/HANDOFF.html §7) — so a null-category income row reads "Ready to
+ * Assign" instead of the generic "Uncategorized" that categoryStore.displayPath
+ * returns for other null-category rows (e.g. an uncategorized expense).
+ * This is copy-only: it does not touch displayPath or any store/data logic.
+ */
+function categoryLabel(): string {
+  if (props.transaction.categoryId == null && props.transaction.type === 'income') {
+    return 'Ready to Assign'
+  }
+  return categoryStore.displayPath(props.transaction.categoryId)
+}
+
 // Subtitle line: "Parent › Sub · Account" for sub-categories, "Category · Account" for top-level, or transfer info
 const subtitle = computed(() => {
   if (props.transaction.type === 'transfer') {
@@ -27,9 +42,8 @@ const subtitle = computed(() => {
     const to = props.toAccount?.name ?? '?'
     return `Transfer · ${from} → ${to}`
   }
-  const catPath = categoryStore.displayPath(props.transaction.categoryId)
   const acc = props.account?.name ?? '?'
-  return `${catPath} · ${acc}`
+  return `${categoryLabel()} · ${acc}`
 })
 
 // Display label for the category icon: first letter of category name, or ⇄ for transfers
