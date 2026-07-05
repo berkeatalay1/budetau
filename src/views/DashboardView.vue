@@ -1,29 +1,30 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useTransactionStore } from '../stores/transaction'
-import { useBudgetStore } from '../stores/budget'
 import { useCategoryStore } from '../stores/category'
 import { useQuickAddStore } from '../stores/quickAdd'
+import { getBudgetMonth } from '../api'
+import type { BudgetMonth, BudgetMonthCategory } from '../types'
 import HeroSummary from '../components/dashboard/HeroSummary.vue'
-import BudgetCard from '../components/dashboard/BudgetCard.vue'
-import AlertBanner from '../components/dashboard/AlertBanner.vue'
-import AddBudgetModal from '../components/dashboard/AddBudgetModal.vue'
-import ManageBudgetsModal from '../components/dashboard/ManageBudgetsModal.vue'
+import ReadyToAssignTile from '../components/dashboard/ReadyToAssignTile.vue'
+import EnvelopeSummaryStats from '../components/dashboard/EnvelopeSummaryStats.vue'
+import OverspentEnvelopes from '../components/dashboard/OverspentEnvelopes.vue'
 
 // ─── stores ───────────────────────────────────────────────────────────────────
 const txStore = useTransactionStore()
-const budgetStore = useBudgetStore()
 const categoryStore = useCategoryStore()
 const quickAdd = useQuickAddStore()
-
-// ─── modals ───────────────────────────────────────────────────────────────────
-const showAddBudget = ref(false)
-const showManageBudgets = ref(false)
 
 // ─── month navigation ─────────────────────────────────────────────────────────
 const today = new Date()
 const viewYear = ref(today.getFullYear())
 const viewMonth = ref(today.getMonth()) // 0-indexed
+
+/** Convert the 0-indexed viewYear/viewMonth into a 'YYYY-MM' string. */
+const viewMonthKey = computed(() => {
+  const mo = String(viewMonth.value + 1).padStart(2, '0')
+  return `${viewYear.value}-${mo}`
+})
 
 function prevMonth() {
   if (viewMonth.value === 0) {
@@ -72,67 +73,56 @@ const totalSpend = computed(() =>
     .reduce((sum, tx) => sum + tx.amount, 0),
 )
 
-// ─── budget card data ─────────────────────────────────────────────────────────
-interface BudgetRow {
-  id: number
-  name: string
-  colorCode: string | null
-  spent: number
-  limit: number
-  pct: number
-  alertThreshold: number
-  status: 'under' | 'near' | 'over'
+// ─── envelope data (v5 read model) ────────────────────────────────────────────
+// Fetched directly via the API into a LOCAL ref — the Dashboard must not call
+// budgetMonthStore.setMonth(...), since that store is a singleton shared with
+// the Plan screen and mutating its month would change what Plan shows next.
+const monthData = ref<BudgetMonth | null>(null)
+const isBudgetMonthLoading = ref(false)
+
+async function fetchMonthData() {
+  isBudgetMonthLoading.value = true
+  try {
+    monthData.value = await getBudgetMonth(viewMonthKey.value)
+  } catch {
+    monthData.value = null
+  } finally {
+    isBudgetMonthLoading.value = false
+  }
 }
 
-const budgetRows = computed<BudgetRow[]>(() => {
-  return budgetStore.data.map((b) => {
-    const category = categoryStore.byId.get(b.categoryId)
-    // Roll up: a budget counts spending in its category and any sub-category.
-    const catIds = new Set(categoryStore.descendantIds(b.categoryId))
-    const spent = monthTransactions.value
-      .filter((tx) => tx.type === 'expense' && tx.categoryId != null && catIds.has(tx.categoryId))
-      .reduce((sum, tx) => sum + tx.amount, 0)
-    const pct = b.amount > 0 ? spent / b.amount : 0
-    const threshold = b.alertThreshold
-    const status: 'under' | 'near' | 'over' =
-      pct >= 1 ? 'over' : pct >= threshold ? 'near' : 'under'
-    return {
-      id: b.id,
-      name: category?.name ?? 'Unknown',
-      colorCode: category?.colorCode ?? null,
-      spent,
-      limit: b.amount,
-      pct,
-      alertThreshold: threshold,
-      status,
-    }
-  })
+watch(viewMonthKey, () => {
+  fetchMonthData()
 })
 
-// ─── alert banners (near ≥ threshold or over ≥ 100%) ─────────────────────────
-const alerts = computed(() =>
-  budgetRows.value.filter(
-    (b): b is BudgetRow & { status: 'near' | 'over' } => b.status === 'near' || b.status === 'over',
-  ),
+const readyToAssign = computed(() => monthData.value?.readyToAssign ?? 0)
+
+const categories = computed<BudgetMonthCategory[]>(() => monthData.value?.categories ?? [])
+
+const totalAssigned = computed(() => categories.value.reduce((sum, c) => sum + c.assigned, 0))
+const totalActivity = computed(() => categories.value.reduce((sum, c) => sum + c.activity, 0))
+const totalAvailable = computed(() => categories.value.reduce((sum, c) => sum + c.available, 0))
+
+const overspentEnvelopes = computed(() =>
+  categories.value
+    .filter((c) => c.available < 0)
+    .sort((a, b) => a.available - b.available)
+    .slice(0, 5),
 )
 
 // ─── empty state ──────────────────────────────────────────────────────────────
 const isEmpty = computed(
-  () =>
-    !txStore.isLoading &&
-    !budgetStore.isLoading &&
-    txStore.data.length === 0 &&
-    budgetStore.data.length === 0,
+  () => !txStore.isLoading && txStore.data.length === 0 && categories.value.length === 0,
 )
 
 // ─── loading ─────────────────────────────────────────────────────────────────
 const isLoading = computed(
-  () => txStore.isLoading || budgetStore.isLoading || categoryStore.isLoading,
+  () => txStore.isLoading || categoryStore.isLoading || isBudgetMonthLoading.value,
 )
 
 // ─── fetch on mount ───────────────────────────────────────────────────────────
 onMounted(async () => {
-  await Promise.all([txStore.fetchAll(), budgetStore.fetchAll(), categoryStore.fetchAll()])
+  await Promise.all([txStore.fetchAll(), categoryStore.fetchAll(), fetchMonthData()])
 })
 </script>
 
@@ -173,12 +163,12 @@ onMounted(async () => {
           <span class="text-[15px] leading-none">+</span>
           Add a transaction
         </button>
-        <button
+        <router-link
+          to="/plan"
           class="font-semibold text-[13px] text-primary bg-card border border-border px-[18px] py-[11px] rounded-control cursor-pointer hover:bg-bg transition-colors"
-          @click="showAddBudget = true"
         >
-          Set a budget
-        </button>
+          Head to Plan to give your money a job
+        </router-link>
       </div>
 
       <p class="text-caption text-secondary mt-[18px]">
@@ -225,58 +215,17 @@ onMounted(async () => {
     <!-- Hero summary -->
     <HeroSummary :income="totalIncome" :spend="totalSpend" :month-label="monthLabel" />
 
-    <!-- Alert banners -->
-    <div v-if="alerts.length > 0" class="flex flex-col gap-[10px] mb-[22px]">
-      <AlertBanner
-        v-for="b in alerts"
-        :key="b.id"
-        :category-name="b.name"
-        :spent="b.spent"
-        :limit="b.limit"
-        :status="b.status"
-      />
-    </div>
+    <!-- Ready to Assign -->
+    <ReadyToAssignTile :ready-to-assign="readyToAssign" />
 
-    <!-- Budgets section -->
-    <div v-if="budgetRows.length > 0">
-      <div class="flex items-center justify-between mb-[14px]">
-        <h2 class="text-[16px] font-semibold text-primary leading-none">Budgets</h2>
-        <button
-          class="text-[13px] font-semibold text-accent cursor-pointer hover:underline"
-          @click="showManageBudgets = true"
-        >
-          Manage budgets
-        </button>
-      </div>
+    <!-- Assigned vs Available summary -->
+    <EnvelopeSummaryStats
+      :total-assigned="totalAssigned"
+      :total-activity="totalActivity"
+      :total-available="totalAvailable"
+    />
 
-      <div class="grid grid-cols-3 gap-[14px]">
-        <BudgetCard
-          v-for="b in budgetRows"
-          :key="b.id"
-          :name="b.name"
-          :color-code="b.colorCode"
-          :spent="b.spent"
-          :limit="b.limit"
-          :alert-threshold="b.alertThreshold"
-        />
-      </div>
-    </div>
-
-    <!-- No budgets yet (but has transactions) -->
-    <div v-else class="rounded-card border border-border bg-card p-8 text-center shadow-card mt-2">
-      <p class="text-secondary text-body">No budgets set yet.</p>
-      <button
-        class="mt-4 font-semibold text-[13px] text-accent hover:underline cursor-pointer"
-        @click="showAddBudget = true"
-      >
-        Set a budget
-      </button>
-    </div>
+    <!-- Top overspent envelopes -->
+    <OverspentEnvelopes :envelopes="overspentEnvelopes" />
   </div>
-
-  <!-- Budget creation modal — available from empty state and no-budgets card -->
-  <AddBudgetModal :open="showAddBudget" @close="showAddBudget = false" />
-
-  <!-- Budget management modal — edit + delete existing budgets -->
-  <ManageBudgetsModal :open="showManageBudgets" @close="showManageBudgets = false" />
 </template>
