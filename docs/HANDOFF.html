@@ -37,7 +37,7 @@
     <h1>Budetau — Engineering Handoff &amp; Continuation Plan</h1>
     <p><strong>Read this first if you are a new agent or developer picking up the project.</strong> It captures the stack, the non-obvious conventions that <em>will</em> bite you, what's shipped, and how to continue. Sources of truth: the code (<code>src/</code>, <code>src-tauri/</code>) and the <a href="feature_list.html">feature list</a>.</p>
 
-    <div class="note"><strong>State as of this handoff:</strong> branch <code>phase-1-local-infra</code>, HEAD <code>dfe01c6</code>. 5 views, 24 Vue components, 8 Pinia stores, 22 Rust commands, 38 backend tests + 11 Vitest (all green). Build + lint + clippy clean. <strong>Envelope budgeting (YNAB core loop) v1 is shipped</strong> — see <a href="#envelope-epic">§7</a>. Also shipped since the prior handoff: backup &amp; restore, balance recompute (migration v4), and infra polish (lazy Analytics route, pruned pre-restore backups, global toast store, Vitest harness).</div>
+    <div class="note"><strong>State as of this handoff:</strong> branch <code>phase-1-local-infra</code>, HEAD <code>3b3f090</code>. 5 views, 26 Vue components, 9 Pinia stores, 27 Rust commands, 46 backend tests + 11 Vitest (all green). Build + lint + clippy clean. Shipped: <strong>envelope budgeting (YNAB core loop) v1</strong> (§7), and <strong>recurring transactions</strong> (schema v6 + on-launch scheduler + Settings management UI; supports a biweekly paycheck posting to Ready to Assign). Earlier: backup &amp; restore, balance recompute (v4), infra polish (lazy Analytics, pruned backups, global toast, Vitest).</div>
 
     <!-- ============================================ -->
     <h2>1 · What this is</h2>
@@ -68,7 +68,7 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
 
     <!-- ============================================ -->
     <h2>3 · Data model</h2>
-    <p>Money is always stored as <strong>INTEGER cents</strong>. Schema version tracked via <code>PRAGMA user_version</code>; migrations are append-only in <code>src-tauri/src/db.rs</code> (<code>migrate_v1..v5</code>), each bumping the version independently. <strong>v4</strong> adds <code>accounts.opening_balance</code> (backfilled at migration time as <code>balance − net transaction effect</code>) so balances can be rebuilt from history without wiping the starting balance; it is kept internal to the DB layer (not on the <code>Account</code> IPC struct). <strong>v5</strong> adds <code>category_months</code> for envelope budgeting (see §7 envelope epic) and backfills existing <code>budgets.amount</code> into the current month.</p>
+    <p>Money is always stored as <strong>INTEGER cents</strong>. Schema version tracked via <code>PRAGMA user_version</code>; migrations are append-only in <code>src-tauri/src/db.rs</code> (<code>migrate_v1..v5</code>), each bumping the version independently. <strong>v4</strong> adds <code>accounts.opening_balance</code> (backfilled at migration time as <code>balance − net transaction effect</code>) so balances can be rebuilt from history without wiping the starting balance; it is kept internal to the DB layer (not on the <code>Account</code> IPC struct). <strong>v5</strong> adds <code>category_months</code> for envelope budgeting (see §7 envelope epic) and backfills existing <code>budgets.amount</code> into the current month. <strong>v6</strong> adds <code>recurring_rules</code> (scheduled transactions).</p>
     <table>
       <tr><th>Table</th><th>Key columns</th></tr>
       <tr><td><code>app_profiles</code></td><td>id, profile_name, created_at, db_sync_path</td></tr>
@@ -76,6 +76,7 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
       <tr><td><code>categories</code></td><td>id, profile_id, name, color_code, type, <strong>parent_id</strong> <em>(v3: NULL = top-level; one level of nesting)</em></td></tr>
       <tr><td><code>budgets</code></td><td>id, profile_id, category_id, period, amount <em>(cents)</em>, <strong>alert_threshold</strong> <em>(v2: 0–1 fraction)</em> — <em>legacy fixed-budget model; kept intact, superseded by envelopes</em></td></tr>
       <tr><td><code>category_months</code></td><td>id, profile_id, category_id, month <em>('YYYY-MM')</em>, assigned <em>(<strong>signed</strong> cents)</em>, UNIQUE(category_id, month) <em>(v5: envelope budgeting)</em></td></tr>
+      <tr><td><code>recurring_rules</code></td><td>id, profile_id, account_id, amount, category_id, type, transfer_account_id, note, <strong>cadence</strong> <em>(weekly/biweekly/monthly/yearly)</em>, <strong>next_due</strong> <em>('YYYY-MM-DD')</em>, active <em>(v6: scheduled transactions)</em></td></tr>
       <tr><td><code>transactions</code></td><td>id, account_id, amount <em>(cents, positive)</em>, category_id, date, note, type, transfer_account_id</td></tr>
     </table>
     <p>Migrations: <strong>v1</strong> core tables · <strong>v2</strong> <code>budgets.alert_threshold</code> · <strong>v3</strong> <code>categories.parent_id</code>. On a <em>fresh</em> DB, seeding adds a "Personal" profile, default categories (incl. example subs under Dining Out), and a default "Cash" account. Seeding is per-entity idempotent, so legacy DBs backfill a default account but do <u>not</u> get example sub-categories (by design).</p>
@@ -121,7 +122,8 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
       <li><strong>Sub-categories:</strong> one level (parent → sub), roll-up to parent budget, across all four surfaces.</li>
       <li><strong>Backup &amp; restore</strong> (Settings): export a verified timestamped copy, or restore from a file — Tauri dialog plugin for picking, <code>integrity_check</code> on both sides, restore confirms first and auto-backs-up the current DB, then reloads.</li>
       <li><strong>Balance recompute</strong> (Settings → Maintenance): one-click rebuild of every account balance from <code>opening_balance</code> + transaction history — a safety net against invariant ② drift.</li>
-      <li><strong>Envelope budgeting (v1)</strong> — the YNAB core loop: Plan screen (assign / activity / available with rollover), move-money, income → Ready to Assign, and a re-worked envelope Dashboard. See §7.</li>
+      <li><strong>Envelope budgeting (v1)</strong> — the YNAB core loop: Plan screen (assign / activity / available with rollover), move-money, income → Ready to Assign, and a re-worked envelope Dashboard. Parents with sub-categories render as read-only group headers. See §7.</li>
+      <li><strong>Recurring transactions</strong> — <code>recurring_rules</code> (v6) + an on-launch scheduler that catches up any due/missed occurrences (idempotent via <code>next_due</code>); managed from a Settings card. Cadences: weekly / biweekly / monthly / yearly. A biweekly income rule auto-posts a paycheck to Ready to Assign.</li>
     </ul>
 
     <!-- ============================================ -->
@@ -152,7 +154,7 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
       <ul>
         <li><strong>Credit-card categories</strong> (a payment envelope that fills as you spend on the card) and <strong>off-budget accounts</strong>.</li>
         <li><strong>Cash overspend → next month:</strong> a negative <code>available</code> currently just rolls forward in that envelope; YNAB instead pulls cash overspending out of next month's Ready to Assign. Decide and implement.</li>
-        <li><strong>Parent-envelope semantics:</strong> today a parent row's Assigned cell shows the parent's <em>own</em> assigned while Activity/Available show the group roll-up (own + children) — internally consistent but can read oddly. Consider making top-level categories non-assignable group headers (YNAB-style).</li>
+        <li><strong>Parent-envelope semantics — RESOLVED.</strong> A parent with sub-categories is now a <strong>read-only group header</strong> (Assigned/Activity/Available all show the rolled-up total, including the parent's own from the v5 backfill); only leaf categories are editable. See <code>PlanView.vue</code> <code>hasChildren()</code> + <code>EnvelopeRow.vue</code>'s <code>readonly</code> prop. A parent's own assigned (if any) can still be moved out via the row's move-money button.</li>
         <li><strong>Dead legacy budget UI:</strong> <code>budgets</code> table + its CRUD commands and the now-unreferenced <code>dashboard/BudgetCard.vue</code>, <code>AlertBanner.vue</code>, <code>AddBudgetModal.vue</code>, <code>ManageBudgetsModal.vue</code> + the <code>budget</code> store remain in the tree (kept intact this epic). Remove once nothing depends on them.</li>
       </ul>
     </div>
@@ -160,9 +162,9 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
     <h3>Other committed roadmap (after the epic)</h3>
     <table>
       <tr><th>#</th><th>Feature</th><th>Notes for the implementer</th></tr>
-      <tr><td>1</td><td><strong>CSV bank import</strong></td><td>Rust <code>csv</code> parser, column mapping, preview, dedupe via an import hash. New <code>import_batches</code> table + migration v6.</td></tr>
-      <tr><td>2</td><td><strong>Recurring transactions</strong></td><td>New <code>recurring_rules</code> table (migration v6/v7), post-due-on-launch scheduler, management UI.</td></tr>
+      <tr><td>1</td><td><strong>CSV bank import</strong></td><td>Rust <code>csv</code> parser, column mapping, preview, dedupe via an import hash. New <code>import_batches</code> table + migration <strong>v7</strong>.</td></tr>
     </table>
+    <p><strong>Recurring transactions</strong> — <span class="ok">SHIPPED</span> (migration v6 + on-launch scheduler + Settings UI). One follow-up worth noting: monthly cadence uses SQLite <code>date(next_due,'+1 month')</code>, which overflows short months (e.g. Jan 31 → Mar 03); fine for biweekly, revisit if month-end monthly rules matter.</p>
 
     <h3>Recommended workflow (what worked here)</h3>
     <ol>

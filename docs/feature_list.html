@@ -125,7 +125,8 @@
         <tr><td><strong>Amount-sign hardening</strong> <span class="check">✓</span></td><td>Amounts stored as positive magnitude (sign from <code>type</code>); backend abs-guards insert/update so balances can't be corrupted.</td></tr>
         <tr><td><strong>Backup &amp; restore</strong> <span class="check">✓</span></td><td>Settings: export a verified timestamped copy or restore from a file (Tauri dialog plugin). <code>integrity_check</code> on both sides; restore confirms, auto-backs-up the current DB, migrates an older backup forward, then reloads.</td></tr>
         <tr><td><strong>Balance recompute utility</strong> <span class="check">✓</span></td><td>Settings → Maintenance: rebuild every <code>accounts.balance</code> from <code>opening_balance</code> + transaction history (migration v4 adds/backfills <code>opening_balance</code>). Safety net against incremental-balance drift.</td></tr>
-        <tr><td><strong>Envelope budgeting — YNAB core loop (v1)</strong> <span class="check">✓</span></td><td>Zero-based budgeting: Ready to Assign → Assigned → Activity → Available with monthly rollover and move-money. Migration v5 (<code>category_months</code>) + engine; Plan screen; income → Ready to Assign; envelope Dashboard. Replaces the fixed-amount <code>budgets</code> model. v2 refinements (credit cards, off-budget accounts, cash-overspend→next-month RTA) deferred — see <a href="HANDOFF.html#envelope-epic">HANDOFF §7</a>.</td></tr>
+        <tr><td><strong>Envelope budgeting — YNAB core loop (v1)</strong> <span class="check">✓</span></td><td>Zero-based budgeting: Ready to Assign → Assigned → Activity → Available with monthly rollover and move-money. Migration v5 (<code>category_months</code>) + engine; Plan screen (parents are read-only group headers); income → Ready to Assign; envelope Dashboard. Replaces the fixed-amount <code>budgets</code> model. v2 refinements (credit cards, off-budget accounts, cash-overspend→next-month RTA) deferred — see <a href="HANDOFF.html#envelope-epic">HANDOFF §7</a>.</td></tr>
+        <tr><td><strong>Recurring transactions</strong> <span class="check">✓</span></td><td>Scheduled/auto-repeating entries (rent, salary, a biweekly paycheck). Migration v6 (<code>recurring_rules</code>) + an on-launch scheduler that catches up any due/missed occurrences (idempotent); managed from a Settings card. Cadences: weekly / biweekly / monthly / yearly. Income rules post to Ready to Assign.</td></tr>
       </tbody>
     </table>
 
@@ -136,8 +137,7 @@
     <table>
       <thead><tr><th>Feature</th><th>Detail</th><th>Notes</th></tr></thead>
       <tbody>
-        <tr><td><strong>CSV bank import</strong></td><td>Local Rust CSV parser, column mapping, preview, dedupe via import hash, atomic batch insert.</td><td>New <code>import_batches</code> table (migration v6).</td></tr>
-        <tr><td><strong>Recurring transactions</strong></td><td>Scheduled/auto-repeating entries (rent, salary); post-due on launch; manage rules.</td><td>New <code>recurring_rules</code> table.</td></tr>
+        <tr><td><strong>CSV bank import</strong></td><td>Local Rust CSV parser, column mapping, preview, dedupe via import hash, atomic batch insert.</td><td>New <code>import_batches</code> table (migration v7). Next up.</td></tr>
       </tbody>
     </table>
 
@@ -174,7 +174,7 @@
       </tbody>
     </table>
 
-    <div class="note">Status current as of branch <code>phase-1-local-infra</code> @ <code>dfe01c6</code> — Accounts, Analytics, configurable alerts, sub-categories, backup &amp; restore, balance recompute, and <strong>envelope budgeting (YNAB core loop, v1)</strong> are all shipped and verified. For stack, conventions, invariants, the envelope design/invariants, and the recommended way to continue, see <strong><a href="HANDOFF.html">HANDOFF.html</a></strong>.</div>
+    <div class="note">Status current as of branch <code>phase-1-local-infra</code> @ <code>3b3f090</code> — Accounts, Analytics, configurable alerts, sub-categories, backup &amp; restore, balance recompute, <strong>envelope budgeting (YNAB core loop, v1)</strong>, and <strong>recurring transactions</strong> are all shipped and verified. For stack, conventions, invariants, the envelope design/invariants, and the recommended way to continue, see <strong><a href="HANDOFF.html">HANDOFF.html</a></strong>.</div>
 </div>
 </body>
 </html>
