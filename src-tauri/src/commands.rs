@@ -103,6 +103,28 @@ pub struct Transaction {
     pub transfer_account_id: Option<i64>,
 }
 
+/// A scheduled/auto-repeating transaction rule (v6 schema) — e.g. rent or a
+/// biweekly paycheck. `category_id = None` on an `income` rule is exactly how
+/// its posted occurrences reach Ready to Assign (see `build_budget_month`,
+/// which sums all income regardless of category).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecurringRule {
+    pub id: i64,
+    pub profile_id: i64,
+    pub account_id: i64,
+    pub amount: i64,
+    pub category_id: Option<i64>,
+    pub r#type: String,
+    pub transfer_account_id: Option<i64>,
+    pub note: Option<String>,
+    pub cadence: String,
+    /// Next occurrence to post, 'YYYY-MM-DD'. Advanced forward by
+    /// `post_due_recurring` after each posted occurrence.
+    pub next_due: String,
+    pub active: bool,
+}
+
 // ---------------------------------------------------------------------------
 // Create payloads (no `id` — assigned by SQLite).
 // ---------------------------------------------------------------------------
@@ -157,6 +179,27 @@ pub struct NewTransaction {
     pub transfer_account_id: Option<i64>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NewRecurringRule {
+    pub profile_id: i64,
+    pub account_id: i64,
+    pub amount: i64,
+    pub category_id: Option<i64>,
+    pub r#type: String,
+    pub transfer_account_id: Option<i64>,
+    pub note: Option<String>,
+    pub cadence: String,
+    pub next_due: String,
+    /// Defaults to true when omitted by the frontend.
+    #[serde(default = "default_active")]
+    pub active: bool,
+}
+
+fn default_active() -> bool {
+    true
+}
+
 // ---------------------------------------------------------------------------
 // DB logic — plain functions over a `&Connection`. Unit-testable.
 // ---------------------------------------------------------------------------
@@ -204,6 +247,22 @@ fn map_transaction(row: &rusqlite::Row<'_>) -> rusqlite::Result<Transaction> {
         note: row.get("note")?,
         r#type: row.get("type")?,
         transfer_account_id: row.get("transfer_account_id")?,
+    })
+}
+
+fn map_recurring_rule(row: &rusqlite::Row<'_>) -> rusqlite::Result<RecurringRule> {
+    Ok(RecurringRule {
+        id: row.get("id")?,
+        profile_id: row.get("profile_id")?,
+        account_id: row.get("account_id")?,
+        amount: row.get("amount")?,
+        category_id: row.get("category_id")?,
+        r#type: row.get("type")?,
+        transfer_account_id: row.get("transfer_account_id")?,
+        note: row.get("note")?,
+        cadence: row.get("cadence")?,
+        next_due: row.get("next_due")?,
+        active: row.get("active")?,
     })
 }
 
@@ -706,6 +765,179 @@ pub fn set_assigned_logic(
 }
 
 // ---------------------------------------------------------------------------
+// Recurring transactions — CRUD plus the launch-time scheduler.
+//
+// A `recurring_rules` row (v6 schema) describes a scheduled/auto-repeating
+// transaction (rent, salary, ...). `post_due_recurring` is the scheduler: it
+// posts every occurrence whose `next_due` has arrived (catching up on any
+// missed/back-dated occurrences too), reusing `insert_transaction` so balance
+// math and the Ready to Assign flow (income with `category_id = None`) work
+// exactly as they do for a manually entered transaction.
+// ---------------------------------------------------------------------------
+
+fn select_recurring_rules(conn: &Connection) -> rusqlite::Result<Vec<RecurringRule>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, profile_id, account_id, amount, category_id, type, \
+         transfer_account_id, note, cadence, next_due, active \
+         FROM recurring_rules ORDER BY id;",
+    )?;
+    let rows = stmt.query_map([], map_recurring_rule)?;
+    rows.collect()
+}
+
+fn fetch_recurring_rule(conn: &Connection, id: i64) -> rusqlite::Result<RecurringRule> {
+    conn.query_row(
+        "SELECT id, profile_id, account_id, amount, category_id, type, \
+         transfer_account_id, note, cadence, next_due, active \
+         FROM recurring_rules WHERE id = ?1;",
+        params![id],
+        map_recurring_rule,
+    )
+}
+
+fn insert_recurring_rule(
+    conn: &Connection,
+    new: &NewRecurringRule,
+) -> rusqlite::Result<RecurringRule> {
+    conn.execute(
+        "INSERT INTO recurring_rules \
+         (profile_id, account_id, amount, category_id, type, transfer_account_id, note, \
+          cadence, next_due, active) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);",
+        params![
+            new.profile_id,
+            new.account_id,
+            new.amount.abs(),
+            new.category_id,
+            new.r#type,
+            new.transfer_account_id,
+            new.note,
+            new.cadence,
+            new.next_due,
+            new.active,
+        ],
+    )?;
+    fetch_recurring_rule(conn, conn.last_insert_rowid())
+}
+
+fn update_recurring_rule_logic(
+    conn: &Connection,
+    r: &RecurringRule,
+) -> rusqlite::Result<RecurringRule> {
+    conn.execute(
+        "UPDATE recurring_rules SET \
+         account_id = ?1, amount = ?2, category_id = ?3, type = ?4, transfer_account_id = ?5, \
+         note = ?6, cadence = ?7, next_due = ?8, active = ?9 WHERE id = ?10;",
+        params![
+            r.account_id,
+            r.amount.abs(),
+            r.category_id,
+            r.r#type,
+            r.transfer_account_id,
+            r.note,
+            r.cadence,
+            r.next_due,
+            r.active,
+            r.id,
+        ],
+    )?;
+    fetch_recurring_rule(conn, r.id)
+}
+
+fn delete_recurring_rule_logic(conn: &Connection, id: i64) -> rusqlite::Result<()> {
+    conn.execute("DELETE FROM recurring_rules WHERE id = ?1;", params![id])?;
+    Ok(())
+}
+
+/// Advance `date` forward by one `cadence` period using SQLite's `date()`
+/// modifiers.
+///
+/// NOTE: `'+1 month'` has SQLite's well-known month-end overflow quirk — e.g.
+/// Jan 31 + 1 month lands on Mar 03, not Feb 28/29, because SQLite clamps the
+/// day *after* rolling the month forward. Acceptable for v1; a future version
+/// could special-case month-end dates if this proves confusing in practice.
+fn advance_date(conn: &Connection, date: &str, cadence: &str) -> rusqlite::Result<String> {
+    let modifier = match cadence {
+        "weekly" => "+7 days",
+        "biweekly" => "+14 days",
+        "monthly" => "+1 month",
+        "yearly" => "+1 year",
+        other => {
+            return Err(rusqlite::Error::InvalidParameterName(format!(
+                "unknown cadence: {other}"
+            )))
+        }
+    };
+    conn.query_row(
+        "SELECT date(?1, ?2);",
+        params![date, modifier],
+        |row| row.get(0),
+    )
+}
+
+/// Post every due (or missed/back-dated) occurrence of every active
+/// recurring rule as of `today` ('YYYY-MM-DD'), returning the total number of
+/// transactions posted.
+///
+/// For each active rule, while `next_due <= today`: post a transaction dated
+/// `next_due` via `insert_transaction` (so balances adjust exactly as a
+/// manual entry would, and income with `category_id = None` reaches Ready to
+/// Assign), then advance `next_due` by the rule's cadence and persist it.
+/// This both catches up multiple missed occurrences in one call and makes
+/// repeated calls on the same `today` idempotent — once `next_due` passes
+/// `today`, the loop for that rule stops posting.
+///
+/// The per-rule catch-up loop is capped at 1000 iterations so a corrupted or
+/// absurdly old `next_due` can't spin forever.
+pub fn post_due_recurring(conn: &mut Connection, today: &str) -> rusqlite::Result<usize> {
+    const MAX_CATCH_UP: usize = 1000;
+
+    // Collect the rule rows first, into an owned Vec, so the prepared
+    // statement's borrow of `conn` ends before we mutate via
+    // `insert_transaction` (which needs `&mut Connection`).
+    let rules: Vec<RecurringRule> = {
+        let mut stmt = conn.prepare(
+            "SELECT id, profile_id, account_id, amount, category_id, type, \
+             transfer_account_id, note, cadence, next_due, active \
+             FROM recurring_rules WHERE active = 1 ORDER BY id;",
+        )?;
+        let rows = stmt.query_map([], map_recurring_rule)?.collect::<rusqlite::Result<Vec<_>>>()?;
+        rows
+    };
+
+    let mut posted = 0usize;
+    for rule in rules {
+        let mut next_due = rule.next_due.clone();
+        let mut iterations = 0usize;
+        while next_due.as_str() <= today && iterations < MAX_CATCH_UP {
+            insert_transaction(
+                conn,
+                &NewTransaction {
+                    account_id: rule.account_id,
+                    amount: rule.amount,
+                    category_id: rule.category_id,
+                    date: next_due.clone(),
+                    note: rule.note.clone(),
+                    r#type: rule.r#type.clone(),
+                    transfer_account_id: rule.transfer_account_id,
+                },
+            )?;
+            posted += 1;
+            next_due = advance_date(conn, &next_due, &rule.cadence)?;
+            iterations += 1;
+        }
+        if next_due != rule.next_due {
+            conn.execute(
+                "UPDATE recurring_rules SET next_due = ?1 WHERE id = ?2;",
+                params![next_due, rule.id],
+            )?;
+        }
+    }
+
+    Ok(posted)
+}
+
+// ---------------------------------------------------------------------------
 // Tauri command wrappers — lock state, call logic, map errors to String.
 // ---------------------------------------------------------------------------
 
@@ -866,6 +1098,54 @@ pub fn set_assigned(
 ) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     set_assigned_logic(&conn, category_id, &month, amount).map_err(|e| e.to_string())
+}
+
+// ---------------------------------------------------------------------------
+// Recurring transactions — CRUD + the scheduler command.
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn list_recurring_rules(state: tauri::State<'_, DbState>) -> Result<Vec<RecurringRule>, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    select_recurring_rules(&conn).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn create_recurring_rule(
+    state: tauri::State<'_, DbState>,
+    rule: NewRecurringRule,
+) -> Result<RecurringRule, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    insert_recurring_rule(&conn, &rule).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn update_recurring_rule(
+    state: tauri::State<'_, DbState>,
+    rule: RecurringRule,
+) -> Result<RecurringRule, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    update_recurring_rule_logic(&conn, &rule).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_recurring_rule(state: tauri::State<'_, DbState>, id: i64) -> Result<(), String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    delete_recurring_rule_logic(&conn, id).map_err(|e| e.to_string())
+}
+
+/// Post every due recurring occurrence as of today (local time), returning
+/// the count posted. Also invoked once automatically on app launch (see
+/// `lib.rs` `setup()`, which calls the plain `post_due_recurring` fn
+/// directly); exposed as a command too so the frontend can trigger an
+/// on-demand catch-up (e.g. a manual refresh button in Wave 1).
+#[tauri::command]
+pub fn post_due_recurring_cmd(state: tauri::State<'_, DbState>) -> Result<usize, String> {
+    let mut conn = state.0.lock().map_err(|e| e.to_string())?;
+    let today: String = conn
+        .query_row("SELECT date('now','localtime');", [], |row| row.get(0))
+        .map_err(|e| e.to_string())?;
+    post_due_recurring(&mut conn, &today).map_err(|e| e.to_string())
 }
 
 // ---------------------------------------------------------------------------
@@ -1625,5 +1905,190 @@ mod tests {
             .find(|c| c.category_id == category)
             .unwrap();
         assert_eq!(row.available, -2_000);
+    }
+
+    // -----------------------------------------------------------------
+    // Recurring transactions (`advance_date` / `post_due_recurring`).
+    // -----------------------------------------------------------------
+
+    #[test]
+    fn advance_date_matches_each_cadence() {
+        let (conn, _account, _category) = setup_budgeting();
+
+        assert_eq!(advance_date(&conn, "2026-07-01", "weekly").unwrap(), "2026-07-08");
+        assert_eq!(advance_date(&conn, "2026-07-01", "biweekly").unwrap(), "2026-07-15");
+        assert_eq!(advance_date(&conn, "2026-07-01", "monthly").unwrap(), "2026-08-01");
+        assert_eq!(advance_date(&conn, "2026-07-01", "yearly").unwrap(), "2027-07-01");
+    }
+
+    /// Insert a recurring rule directly (there is no unit under test for the
+    /// insert path itself beyond plain SQL, so tests build rows straight from
+    /// `NewRecurringRule` via `insert_recurring_rule`).
+    fn make_rule(conn: &Connection, new: NewRecurringRule) -> RecurringRule {
+        insert_recurring_rule(conn, &new).unwrap()
+    }
+
+    #[test]
+    fn post_due_recurring_catches_up_missed_occurrences_and_advances_next_due() {
+        let (mut conn, account, category) = setup_budgeting();
+        let profile_id = fetch_account(&conn, account).unwrap().profile_id;
+
+        // Biweekly expense rule, next_due several periods in the past
+        // relative to "today" = 2026-07-06.
+        let rule = make_rule(
+            &conn,
+            NewRecurringRule {
+                profile_id,
+                account_id: account,
+                amount: 1_000,
+                category_id: Some(category),
+                r#type: "expense".into(),
+                transfer_account_id: None,
+                note: Some("Rent installment".into()),
+                cadence: "biweekly".into(),
+                next_due: "2026-06-08".into(), // 4 periods before 2026-07-06
+                active: true,
+            },
+        );
+
+        let posted = post_due_recurring(&mut conn, "2026-07-06").unwrap();
+        // Occurrences due on/before 2026-07-06: 06-08, 06-22, 07-06 = 3.
+        assert_eq!(posted, 3);
+
+        let updated = fetch_recurring_rule(&conn, rule.id).unwrap();
+        assert_eq!(updated.next_due, "2026-07-20", "next_due should be the first date > today");
+
+        // Balance reflects all 3 posted occurrences (each an expense of 1000).
+        assert_eq!(balance_of(&conn, account), 0 - 3 * 1_000);
+
+        let txn_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM transactions;", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(txn_count, 3);
+    }
+
+    #[test]
+    fn post_due_recurring_biweekly_income_reaches_ready_to_assign() {
+        let (mut conn, account, _category) = setup_budgeting();
+        let profile_id = fetch_account(&conn, account).unwrap().profile_id;
+
+        // Biweekly paycheck: category_id = None so it flows to Ready to Assign.
+        make_rule(
+            &conn,
+            NewRecurringRule {
+                profile_id,
+                account_id: account,
+                amount: 200_000,
+                category_id: None,
+                r#type: "income".into(),
+                transfer_account_id: None,
+                note: Some("Paycheck".into()),
+                cadence: "biweekly".into(),
+                next_due: "2026-07-06".into(),
+                active: true,
+            },
+        );
+
+        let before = build_budget_month(&conn, "2026-07").unwrap();
+        let posted = post_due_recurring(&mut conn, "2026-07-06").unwrap();
+        assert_eq!(posted, 1);
+
+        let after = build_budget_month(&conn, "2026-07").unwrap();
+        assert_eq!(
+            after.ready_to_assign - before.ready_to_assign,
+            200_000,
+            "biweekly income should increase Ready to Assign by the posted amount"
+        );
+    }
+
+    #[test]
+    fn post_due_recurring_is_idempotent_for_the_same_today() {
+        let (mut conn, account, category) = setup_budgeting();
+        let profile_id = fetch_account(&conn, account).unwrap().profile_id;
+
+        make_rule(
+            &conn,
+            NewRecurringRule {
+                profile_id,
+                account_id: account,
+                amount: 5_000,
+                category_id: Some(category),
+                r#type: "expense".into(),
+                transfer_account_id: None,
+                note: None,
+                cadence: "monthly".into(),
+                next_due: "2026-07-06".into(),
+                active: true,
+            },
+        );
+
+        let first = post_due_recurring(&mut conn, "2026-07-06").unwrap();
+        assert_eq!(first, 1);
+
+        let second = post_due_recurring(&mut conn, "2026-07-06").unwrap();
+        assert_eq!(second, 0, "calling again with the same today must post nothing new");
+    }
+
+    #[test]
+    fn post_due_recurring_skips_inactive_rules() {
+        let (mut conn, account, category) = setup_budgeting();
+        let profile_id = fetch_account(&conn, account).unwrap().profile_id;
+
+        make_rule(
+            &conn,
+            NewRecurringRule {
+                profile_id,
+                account_id: account,
+                amount: 5_000,
+                category_id: Some(category),
+                r#type: "expense".into(),
+                transfer_account_id: None,
+                note: None,
+                cadence: "weekly".into(),
+                next_due: "2026-01-01".into(), // long overdue
+                active: false,
+            },
+        );
+
+        let posted = post_due_recurring(&mut conn, "2026-07-06").unwrap();
+        assert_eq!(posted, 0, "an inactive rule must post nothing");
+
+        let txn_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM transactions;", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(txn_count, 0);
+    }
+
+    #[test]
+    fn recurring_rule_crud_roundtrip() {
+        let (conn, account, category) = setup_budgeting();
+        let profile_id = fetch_account(&conn, account).unwrap().profile_id;
+
+        let created = make_rule(
+            &conn,
+            NewRecurringRule {
+                profile_id,
+                account_id: account,
+                amount: 3_000,
+                category_id: Some(category),
+                r#type: "expense".into(),
+                transfer_account_id: None,
+                note: Some("Gym".into()),
+                cadence: "monthly".into(),
+                next_due: "2026-08-01".into(),
+                active: true,
+            },
+        );
+        assert_eq!(select_recurring_rules(&conn).unwrap().len(), 1);
+
+        let mut updated = created.clone();
+        updated.amount = 3_500;
+        updated.active = false;
+        let saved = update_recurring_rule_logic(&conn, &updated).unwrap();
+        assert_eq!(saved.amount, 3_500);
+        assert!(!saved.active);
+
+        delete_recurring_rule_logic(&conn, created.id).unwrap();
+        assert_eq!(select_recurring_rules(&conn).unwrap().len(), 0);
     }
 }

@@ -20,9 +20,23 @@ pub fn run() {
         .setup(|app| {
             let path =
                 db::resolve_db_path(app.handle()).map_err(Box::<dyn std::error::Error>::from)?;
-            let conn = Connection::open(&path)?;
+            let mut conn = Connection::open(&path)?;
             db::init(&conn)?;
             db::seed_defaults(&conn)?;
+
+            // Catch up any due (or missed/back-dated) recurring occurrences
+            // — e.g. a biweekly paycheck — before the app is usable. Errors
+            // are logged but never block startup.
+            let today: String =
+                conn.query_row("SELECT date('now','localtime');", [], |row| row.get(0))?;
+            match commands::post_due_recurring(&mut conn, &today) {
+                Ok(count) if count > 0 => {
+                    println!("posted {count} due recurring transaction(s) on launch");
+                }
+                Ok(_) => {}
+                Err(e) => eprintln!("failed to post due recurring transactions: {e}"),
+            }
+
             app.manage(DbState(Mutex::new(conn)));
             Ok(())
         })
@@ -47,6 +61,11 @@ pub fn run() {
             commands::delete_transaction,
             commands::get_budget_month,
             commands::set_assigned,
+            commands::list_recurring_rules,
+            commands::create_recurring_rule,
+            commands::update_recurring_rule,
+            commands::delete_recurring_rule,
+            commands::post_due_recurring_cmd,
             commands::export_backup,
             commands::restore_backup,
         ])

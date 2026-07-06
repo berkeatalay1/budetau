@@ -12,7 +12,9 @@ import type {
   NewAccount,
   NewBudget,
   NewCategory,
+  NewRecurringRule,
   NewTransaction,
+  RecurringRule,
   Transaction,
 } from './types'
 
@@ -78,6 +80,24 @@ export const getBudgetMonth = (month: string): Promise<BudgetMonth> =>
 /** Set a category's assigned cents for `month` to an absolute value. */
 export const setAssigned = (categoryId: number, month: string, amount: number): Promise<void> =>
   invoke('set_assigned', { categoryId, month, amount })
+
+// --- Recurring transactions ------------------------------------------------
+
+export const listRecurringRules = (): Promise<RecurringRule[]> => invoke('list_recurring_rules')
+
+export const createRecurringRule = (rule: NewRecurringRule): Promise<RecurringRule> =>
+  invoke('create_recurring_rule', { rule })
+
+export const updateRecurringRule = (rule: RecurringRule): Promise<RecurringRule> =>
+  invoke('update_recurring_rule', { rule })
+
+export const deleteRecurringRule = (id: number): Promise<void> =>
+  invoke('delete_recurring_rule', { id })
+
+/** Post every due recurring occurrence as of today, returning the count posted.
+ * Also runs automatically on app launch; this lets the frontend trigger an
+ * on-demand catch-up. */
+export const postDueRecurring = (): Promise<number> => invoke('post_due_recurring_cmd')
 
 // --- Backup & restore ----------------------------------------------------
 

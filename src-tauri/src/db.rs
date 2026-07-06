@@ -24,7 +24,7 @@ pub fn resolve_db_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 /// The current schema version produced by [`init`].
-const CURRENT_SCHEMA_VERSION: i64 = 5;
+const CURRENT_SCHEMA_VERSION: i64 = 6;
 
 /// Initialise a connection: configure pragmas and run pending migrations.
 ///
@@ -69,6 +69,10 @@ fn run_migrations(conn: &Connection) -> rusqlite::Result<()> {
     if version < 5 {
         migrate_v5(conn)?;
         conn.execute_batch("PRAGMA user_version = 5;")?;
+    }
+    if version < 6 {
+        migrate_v6(conn)?;
+        conn.execute_batch("PRAGMA user_version = 6;")?;
     }
 
     debug_assert_eq!(
@@ -208,6 +212,40 @@ fn migrate_v5(conn: &Connection) -> rusqlite::Result<()> {
         "
         INSERT OR IGNORE INTO category_months (profile_id, category_id, month, assigned)
         SELECT profile_id, category_id, strftime('%Y-%m','now'), amount FROM budgets;
+        ",
+    )
+}
+
+/// v6: recurring transactions. `recurring_rules` holds one row per
+/// scheduled/auto-repeating transaction (rent, salary, etc.) — the source of
+/// truth the scheduler (`commands::post_due_recurring`) reads on launch to
+/// post any due (or missed/back-dated) occurrences.
+///
+/// `category_id` is nullable: a NULL category on an `income` rule is exactly
+/// how a regular income transaction reaches Ready to Assign (see
+/// `commands::build_budget_month`'s `ready_to_assign` formula, which sums all
+/// income regardless of category) — so a biweekly paycheck rule with no
+/// category posts straight into Ready to Assign, same as a manually entered
+/// paycheck. `next_due` is the next occurrence date to post ('YYYY-MM-DD');
+/// the scheduler advances it forward after each post, which is what makes
+/// posting idempotent for a given day. This is a brand-new table with no
+/// existing data, so there is no backfill.
+fn migrate_v6(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS recurring_rules (
+            id                  INTEGER PRIMARY KEY,
+            profile_id          INTEGER NOT NULL REFERENCES app_profiles(id),
+            account_id          INTEGER NOT NULL REFERENCES accounts(id),
+            amount              INTEGER NOT NULL,              -- positive cents
+            category_id         INTEGER REFERENCES categories(id),   -- NULL = income -> Ready to Assign / uncategorized
+            type                TEXT NOT NULL,                 -- 'expense' | 'income' | 'transfer'
+            transfer_account_id INTEGER REFERENCES accounts(id),     -- NULL unless transfer
+            note                TEXT,
+            cadence             TEXT NOT NULL,                 -- 'weekly' | 'biweekly' | 'monthly' | 'yearly'
+            next_due            TEXT NOT NULL,                 -- 'YYYY-MM-DD' -- next occurrence to post
+            active              INTEGER NOT NULL DEFAULT 1
+        );
         ",
     )
 }
@@ -739,6 +777,45 @@ mod tests {
             .query_row("SELECT COUNT(*) FROM category_months;", [], |row| row.get(0))
             .unwrap();
         assert_eq!(count, 0, "fresh DB has no budgets to backfill");
+    }
+
+    #[test]
+    fn migrate_v6_creates_recurring_rules_table_on_a_populated_v5_db() {
+        // Build a v5 database by hand (populated, matching a real upgrade),
+        // then run `init` and confirm it lands on v6 with the new table.
+        let conn = Connection::open_in_memory().unwrap();
+        migrate_v1(&conn).unwrap();
+        migrate_v2(&conn).unwrap();
+        migrate_v3(&conn).unwrap();
+        migrate_v4(&conn).unwrap();
+        migrate_v5(&conn).unwrap();
+        conn.execute_batch("PRAGMA user_version = 5;").unwrap();
+
+        conn.execute(
+            "INSERT INTO app_profiles (profile_name, created_at) VALUES ('Personal', datetime('now'));",
+            [],
+        )
+        .unwrap();
+
+        init(&conn).unwrap();
+
+        let version: i64 = conn
+            .query_row("PRAGMA user_version;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(version, CURRENT_SCHEMA_VERSION);
+        assert!(table_exists(&conn, "recurring_rules"));
+    }
+
+    #[test]
+    fn migrate_v6_creates_recurring_rules_table_on_a_fresh_db() {
+        let conn = Connection::open_in_memory().unwrap();
+        init(&conn).unwrap();
+
+        let version: i64 = conn
+            .query_row("PRAGMA user_version;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(version, CURRENT_SCHEMA_VERSION);
+        assert!(table_exists(&conn, "recurring_rules"));
     }
 
     #[test]

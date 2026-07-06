@@ -99,3 +99,37 @@ export interface NewTransaction {
   type: string
   transferAccountId: number | null
 }
+
+// Recurring transactions (v6 schema) — scheduled/auto-repeating transactions
+// (rent, salary, ...) posted automatically by the backend scheduler on
+// launch. A `categoryId` of null on an income rule is how its occurrences
+// reach Ready to Assign, same as a manually entered income transaction.
+
+export interface RecurringRule {
+  id: number
+  profileId: number
+  accountId: number
+  amount: number
+  categoryId: number | null
+  type: string
+  transferAccountId: number | null
+  note: string | null
+  cadence: string
+  /** Next occurrence to post, 'YYYY-MM-DD'. */
+  nextDue: string
+  active: boolean
+}
+
+export interface NewRecurringRule {
+  profileId: number
+  accountId: number
+  amount: number
+  categoryId: number | null
+  type: string
+  transferAccountId: number | null
+  note: string | null
+  cadence: string
+  nextDue: string
+  /** Defaults to true when omitted. */
+  active?: boolean
+}
