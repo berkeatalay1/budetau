@@ -97,6 +97,12 @@ interface GroupTotal {
   available: number
 }
 
+/** A parent with sub-categories is a read-only group header; leaf categories
+ * (including childless top-level ones) are editable envelopes. */
+function hasChildren(parentId: number): boolean {
+  return categoryStore.childrenOf(parentId).length > 0
+}
+
 function groupTotalFor(parentId: number): GroupTotal {
   const own = rowFor(parentId)
   const children = categoryStore.childrenOf(parentId)
@@ -235,13 +241,15 @@ const isEmpty = computed(() => !isLoading.value && expenseTopLevel.value.length 
       </div>
 
       <template v-for="parent in expenseTopLevel" :key="parent.id">
-        <!-- Parent (roll-up) row -->
+        <!-- Parent row: a group header (read-only roll-up) when it has
+             sub-categories, otherwise an editable leaf envelope. -->
         <EnvelopeRow
           :category-id="parent.id"
           :name="parent.name"
           :row="groupTotalFor(parent.id)"
           :editable-assigned="rowFor(parent.id).assigned"
           :is-parent="true"
+          :readonly="hasChildren(parent.id)"
           @commit-assign="commitAssign"
           @move-money="openMoveMoney"
         />

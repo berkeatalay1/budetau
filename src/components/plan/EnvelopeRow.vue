@@ -13,11 +13,14 @@ const props = defineProps<{
   name: string
   row: RowValues
   /** The category's own assigned value (cents) — what the input edits.
-   * For a parent row this may differ from `row.assigned` (which is the
-   * group roll-up total). */
+   * Ignored when `readonly` (a group header shows `row.assigned`, the sum). */
   editableAssigned: number
   isParent?: boolean
   indent?: boolean
+  /** Group-header rows (a parent that has sub-categories) are read-only:
+   * they show the rolled-up totals and can't be assigned to directly —
+   * budgeting happens in the leaf envelopes. */
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -57,6 +60,7 @@ function handleMoveMoney() {
 <template>
   <div
     class="group grid grid-cols-[minmax(160px,1fr)_110px_110px_110px_36px] items-center gap-3 border-b border-border/60 px-5 py-2.5 last:border-b-0"
+    :class="readonly ? 'bg-bg/40' : ''"
   >
     <!-- Category name -->
     <span
@@ -69,18 +73,28 @@ function handleMoveMoney() {
       {{ name }}
     </span>
 
-    <!-- Assigned (editable) -->
+    <!-- Assigned — an inline input for leaf envelopes; a read-only rolled-up
+         total for group headers (a parent with sub-categories). -->
     <div class="flex items-center justify-end gap-1 text-[13px]">
-      <span class="text-secondary" aria-hidden="true">$</span>
-      <input
-        v-model="draft"
-        type="number"
-        step="0.01"
-        class="num w-full rounded-[6px] border border-transparent bg-transparent px-1.5 py-1 text-right text-primary outline-none transition-colors hover:border-border focus:border-accent focus:bg-bg focus:ring-2 focus:ring-accent/20"
-        :aria-label="`Assigned for ${name}`"
-        @blur="handleCommit"
-        @keydown="handleKeydown"
-      />
+      <span
+        v-if="readonly"
+        class="num pr-1.5 font-semibold text-primary"
+        :title="`Group total — assign in the sub-categories`"
+      >
+        {{ formatCents(row.assigned) }}
+      </span>
+      <template v-else>
+        <span class="text-secondary" aria-hidden="true">$</span>
+        <input
+          v-model="draft"
+          type="number"
+          step="0.01"
+          class="num w-full rounded-[6px] border border-transparent bg-transparent px-1.5 py-1 text-right text-primary outline-none transition-colors hover:border-border focus:border-accent focus:bg-bg focus:ring-2 focus:ring-accent/20"
+          :aria-label="`Assigned for ${name}`"
+          @blur="handleCommit"
+          @keydown="handleKeydown"
+        />
+      </template>
     </div>
 
     <!-- Activity -->
