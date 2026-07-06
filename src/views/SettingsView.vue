@@ -11,6 +11,7 @@ import AccountFormModal from '../components/settings/AccountFormModal.vue'
 import EditAccountModal from '../components/settings/EditAccountModal.vue'
 import ConfirmDialog from '../components/transactions/ConfirmDialog.vue'
 import CategoryManagerCard from '../components/settings/CategoryManagerCard.vue'
+import RecurringRulesCard from '../components/settings/RecurringRulesCard.vue'
 import { formatCents } from '../lib/format'
 
 const themeStore = useThemeStore()
@@ -496,6 +497,9 @@ async function handleRecomputeBalances() {
 
       <!-- ── Categories card ───────────────────────────────────────────── -->
       <CategoryManagerCard />
+
+      <!-- ── Recurring transactions card ─────────────────────────────────── -->
+      <RecurringRulesCard />
 
       <!-- ── Backup & restore card ──────────────────────────────────────── -->
       <div class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card">
