@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "budetau",
+  "productName": "Budetau",
   "version": "0.1.0",
   "identifier": "com.budetau.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Budetau — budget.db",
+        "title": "Budetau",
         "width": 1200,
         "height": 800,
         "minWidth": 800,
@@ -26,12 +26,19 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "category": "Finance",
+    "copyright": "© 2026 Budetau",
+    "shortDescription": "Local-first envelope budgeting for macOS.",
+    "longDescription": "Budetau is a private, local-first budget planner for macOS. All your data lives in a single SQLite file on your Mac — no accounts, no servers, nothing leaves your device. Zero-based envelope budgeting (Ready to Assign, monthly rollover, move-money), recurring transactions, and one-file backup & restore.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    }
   }
 }
