@@ -37,7 +37,7 @@
     <h1>Budetau — Engineering Handoff &amp; Continuation Plan</h1>
     <p><strong>Read this first if you are a new agent or developer picking up the project.</strong> It captures the stack, the non-obvious conventions that <em>will</em> bite you, what's shipped, and how to continue. Sources of truth: the code (<code>src/</code>, <code>src-tauri/</code>) and the <a href="feature_list.html">feature list</a>.</p>
 
-    <div class="note"><strong>State as of this handoff:</strong> branch <code>phase-1-local-infra</code>, HEAD <code>3b3f090</code>. 5 views, 26 Vue components, 9 Pinia stores, 27 Rust commands, 46 backend tests + 11 Vitest (all green). Build + lint + clippy clean. Shipped: <strong>envelope budgeting (YNAB core loop) v1</strong> (§7), and <strong>recurring transactions</strong> (schema v6 + on-launch scheduler + Settings management UI; supports a biweekly paycheck posting to Ready to Assign). Earlier: backup &amp; restore, balance recompute (v4), infra polish (lazy Analytics, pruned backups, global toast, Vitest).</div>
+    <div class="note"><strong>State as of this handoff:</strong> branch <code>phase-1-local-infra</code>. 5 views, 22 Vue components, 8 Pinia stores, 27 Rust commands, 46 backend tests + 11 Vitest (all green). Build + lint + clippy clean. Dead legacy budget <em>frontend</em> removed; <strong>beta packaging</strong> configured and a macOS bundle builds (see §9). Shipped: <strong>envelope budgeting (YNAB core loop) v1</strong> (§7), and <strong>recurring transactions</strong> (schema v6 + on-launch scheduler + Settings management UI; supports a biweekly paycheck posting to Ready to Assign). Earlier: backup &amp; restore, balance recompute (v4), infra polish (lazy Analytics, pruned backups, global toast, Vitest).</div>
 
     <!-- ============================================ -->
     <h2>1 · What this is</h2>
@@ -155,7 +155,7 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
         <li><strong>Credit-card categories</strong> (a payment envelope that fills as you spend on the card) and <strong>off-budget accounts</strong>.</li>
         <li><strong>Cash overspend → next month:</strong> a negative <code>available</code> currently just rolls forward in that envelope; YNAB instead pulls cash overspending out of next month's Ready to Assign. Decide and implement.</li>
         <li><strong>Parent-envelope semantics — RESOLVED.</strong> A parent with sub-categories is now a <strong>read-only group header</strong> (Assigned/Activity/Available all show the rolled-up total, including the parent's own from the v5 backfill); only leaf categories are editable. See <code>PlanView.vue</code> <code>hasChildren()</code> + <code>EnvelopeRow.vue</code>'s <code>readonly</code> prop. A parent's own assigned (if any) can still be moved out via the row's move-money button.</li>
-        <li><strong>Dead legacy budget UI:</strong> <code>budgets</code> table + its CRUD commands and the now-unreferenced <code>dashboard/BudgetCard.vue</code>, <code>AlertBanner.vue</code>, <code>AddBudgetModal.vue</code>, <code>ManageBudgetsModal.vue</code> + the <code>budget</code> store remain in the tree (kept intact this epic). Remove once nothing depends on them.</li>
+        <li><strong>Legacy budget code:</strong> the dead budget <em>frontend</em> (store, dashboard cards, api wrappers, TS types) was removed. The <code>budgets</code> <em>table</em> and its Rust CRUD commands are intentionally kept — migration v5 backfills from that table, so it can't be dropped; its commands are now frontend-unreferenced but remain a tested unit.</li>
       </ul>
     </div>
 
@@ -177,11 +177,24 @@ cd src-tauri && cargo clippy -- -D warnings</code></pre>
     <h2>8 · Known issues / gotchas</h2>
     <ul>
       <li><strong>Balance drift</strong> (invariant ②) — mitigated by the <code>recompute_balances</code> maintenance command (Settings → Maintenance). It is manual, not automatic; a bad write still drifts until the user runs it.</li>
-      <li><strong>ApexCharts bundle</strong> ~518 kB → one chunk-size build warning. Harmless for desktop; lazy-load the Analytics route to silence it.</li>
+      <li><strong>ApexCharts bundle</strong> — the Analytics route is already lazy-loaded (main bundle ~209 kB), so the remaining chunk-size warning refers only to that deferred Analytics chunk. Harmless for desktop.</li>
       <li><strong>"Current month" captured at mount</strong> in Dashboard/Analytics — won't auto-advance past midnight if left open. Pre-existing, minor.</li>
       <li><strong>Stray git worktree:</strong> an agent left one under <code>.claude/worktrees/</code> (gitignored). eslint now ignores <code>.claude/**</code>; remove with <code>git worktree remove</code> if it bothers you.</li>
       <li><strong>Example sub-categories</strong> only seed on a brand-new DB; existing DBs get the <code>parent_id</code> column but no example data (create subs in Settings → Categories).</li>
     </ul>
+
+    <!-- ============================================ -->
+    <h2>9 · Building a beta package</h2>
+    <p>Bundle config lives in <code>src-tauri/tauri.conf.json</code> (productName <strong>Budetau</strong>, identifier <code>com.budetau.app</code>, version <code>0.1.0</code>, category Finance, macOS min 10.15) and <code>src-tauri/Cargo.toml</code>. Icons are in <code>src-tauri/icons/</code>.</p>
+    <pre><code>export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
+npm run tauri build      # release compile + bundle (~1–2 min after deps are warm)</code></pre>
+    <p>Outputs (gitignored, under <code>src-tauri/target/release/bundle/</code>): <code>macos/Budetau.app</code> and <code>dmg/Budetau_&lt;version&gt;_aarch64.dmg</code>.</p>
+    <div class="crit"><strong>Beta caveats:</strong>
+      <ul>
+        <li><strong>Unsigned / not notarized.</strong> The bundle is ad-hoc signed, so Gatekeeper blocks it on other Macs ("Apple cannot check it for malicious software"). Testers must right-click → <em>Open</em>, or run <code>xattr -dr com.apple.quarantine /Applications/Budetau.app</code>. For a wider beta, sign + notarize with an Apple Developer ID (configure <code>bundle.macOS.signingIdentity</code> + notarization; run signing with your own cert).</li>
+        <li><strong>Apple-Silicon only</strong> (<code>aarch64</code>). For Intel testers, build an <code>x86_64</code> or universal target (<code>--target universal-apple-darwin</code>, requires both Rust targets installed).</li>
+      </ul>
+    </div>
 
     <div class="note">Docs in this folder: <a href="feature_list.html">feature_list.html</a> (roadmap), <a href="budget_planner_architecture_v2.html">budget_planner_architecture_v2.html</a> (original spec, partly superseded — this handoff is the current reference), <a href="phase1.html">phase1.html</a> (historical Phase 1 plan), <a href="UI_DESIGN_BRIEF.md">UI_DESIGN_BRIEF.md</a>, and <code>design/</code> (the imported Claude Design source the UI was built from).</div>
 </div>
