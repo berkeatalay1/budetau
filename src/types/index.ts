@@ -22,16 +22,6 @@ export interface Category {
   parentId: number | null
 }
 
-export interface Budget {
-  id: number
-  profileId: number
-  categoryId: number
-  period: string
-  amount: number
-  /** Fraction of `amount` at which the budget is "near" its limit (0–1). */
-  alertThreshold: number
-}
-
 // Envelope budgeting (v5 schema) — the Plan-view read model.
 
 export interface BudgetMonthCategory {
@@ -80,14 +70,6 @@ export interface NewCategory {
   colorCode: string | null
   type: string
   parentId?: number | null
-}
-
-export interface NewBudget {
-  profileId: number
-  categoryId: number
-  period: string
-  amount: number
-  alertThreshold: number
 }
 
 export interface NewTransaction {

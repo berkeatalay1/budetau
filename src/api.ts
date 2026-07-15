@@ -6,11 +6,9 @@
 import { invoke } from '@tauri-apps/api/core'
 import type {
   Account,
-  Budget,
   BudgetMonth,
   Category,
   NewAccount,
-  NewBudget,
   NewCategory,
   NewRecurringRule,
   NewTransaction,
@@ -28,8 +26,6 @@ export const listAccounts = (): Promise<Account[]> => invoke('list_accounts')
 
 export const listCategories = (): Promise<Category[]> => invoke('list_categories')
 
-export const listBudgets = (): Promise<Budget[]> => invoke('list_budgets')
-
 export const listTransactions = (): Promise<Transaction[]> => invoke('list_transactions')
 
 // --- Creates -------------------------------------------------------------
@@ -39,9 +35,6 @@ export const createAccount = (account: NewAccount): Promise<Account> =>
 
 export const createCategory = (category: NewCategory): Promise<Category> =>
   invoke('create_category', { category })
-
-export const createBudget = (budget: NewBudget): Promise<Budget> =>
-  invoke('create_budget', { budget })
 
 export const createTransaction = (transaction: NewTransaction): Promise<Transaction> =>
   invoke('create_transaction', { transaction })
@@ -60,10 +53,6 @@ export const deleteAccount = (id: number): Promise<void> => invoke('delete_accou
 
 /** Rebuild every account's balance from its transaction history. */
 export const recomputeBalances = (): Promise<Account[]> => invoke('recompute_balances')
-
-export const updateBudget = (budget: Budget): Promise<Budget> => invoke('update_budget', { budget })
-
-export const deleteBudget = (id: number): Promise<void> => invoke('delete_budget', { id })
 
 export const updateTransaction = (transaction: Transaction): Promise<Transaction> =>
   invoke('update_transaction', { transaction })
