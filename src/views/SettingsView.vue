@@ -12,6 +12,7 @@ import EditAccountModal from '../components/settings/EditAccountModal.vue'
 import ConfirmDialog from '../components/transactions/ConfirmDialog.vue'
 import CategoryManagerCard from '../components/settings/CategoryManagerCard.vue'
 import RecurringRulesCard from '../components/settings/RecurringRulesCard.vue'
+import AboutCard from '../components/settings/AboutCard.vue'
 import { formatCents } from '../lib/format'
 
 const themeStore = useThemeStore()
@@ -250,315 +251,458 @@ async function handleRecomputeBalances() {
 </script>
 
 <template>
-  <div class="px-7 py-6 pb-8">
-    <!-- Page title -->
-    <div class="mb-5">
+  <div class="px-7 py-6 pb-10">
+    <!-- Page header -->
+    <div class="mb-7">
       <h1 class="text-h1 text-primary tracking-tight">Settings</h1>
+      <p class="mt-1 text-[13px] text-secondary">Manage your data, appearance, and preferences.</p>
     </div>
 
-    <div class="flex max-w-[640px] flex-col gap-4">
-      <!-- ── Database card ───────────────────────────────────────────────── -->
-      <div class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card">
-        <!-- Card header -->
-        <div class="mb-1 flex items-center gap-2">
-          <span class="text-[15px] font-semibold text-primary">Database</span>
-          <span
-            class="inline-flex items-center gap-[5px] rounded-pill bg-green/10 px-2 py-1 text-[11px] font-semibold text-green"
-          >
-            <span class="h-[6px] w-[6px] rounded-full bg-green"></span>
-            On this Mac
-          </span>
-        </div>
-        <p class="mb-4 text-[13px] leading-relaxed text-secondary">
-          All your data lives in one private file. No accounts, no servers — nothing leaves your
-          device.
-        </p>
-
-        <!-- File location row -->
-        <div
-          class="flex items-center gap-3 rounded-[9px] border border-[#eef0f3] dark:border-border bg-bg px-[14px] py-3"
-        >
-          <!-- DB icon -->
+    <div class="flex max-w-[680px] flex-col gap-8">
+      <!-- ═══ General ═══════════════════════════════════════════════════════ -->
+      <section>
+        <h3 class="mb-3 px-1 text-[11px] font-bold uppercase tracking-wider text-secondary/70">
+          General
+        </h3>
+        <div class="flex flex-col gap-4">
+          <!-- ── Appearance card ───────────────────────────────────────────── -->
           <div
-            class="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[8px] bg-accent/10"
+            class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card"
           >
-            <svg
-              width="16"
-              height="13"
-              viewBox="0 0 16 13"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect
-                x="1"
-                y="1"
-                width="14"
-                height="11"
-                rx="2.5"
-                stroke="rgb(var(--c-accent))"
-                stroke-width="2"
-              />
-            </svg>
-          </div>
-
-          <div class="min-w-0 flex-1">
-            <p class="mb-[2px] text-[12px] font-medium leading-snug text-secondary">
-              File location
+            <div class="mb-1 flex items-center gap-2.5">
+              <div
+                class="flex h-7 w-7 flex-none items-center justify-center rounded-[8px] bg-accent/10 text-accent"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5" />
+                  <path
+                    d="M7 0.5v2M7 11.5v2M13.5 7h-2M2.5 7h-2M11.6 2.4l-1.4 1.4M3.8 10.2l-1.4 1.4M11.6 11.6l-1.4-1.4M3.8 3.8L2.4 2.4"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </div>
+              <h2 class="text-[15px] font-semibold text-primary">Appearance</h2>
+            </div>
+            <p class="mb-4 text-[13px] leading-relaxed text-secondary">
+              Choose how Budetau looks. System follows your macOS setting.
             </p>
-            <p v-if="isLoading" class="text-[13px] text-secondary">Loading…</p>
-            <p v-else-if="dbError" class="text-[13px] text-red">{{ dbError }}</p>
-            <p v-else class="num break-all text-[13px] font-medium leading-snug text-primary">
-              {{ dbPath }}
-            </p>
-          </div>
 
-          <button
-            type="button"
-            class="flex-none rounded-[7px] border border-border bg-card px-3 py-2 text-[12px] font-semibold text-primary whitespace-nowrap transition-colors hover:bg-bg"
-            @click="copyPath"
-          >
-            {{ copied ? '✓ Copied' : 'Copy path' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- ── Appearance card ─────────────────────────────────────────────── -->
-      <div class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card">
-        <h2 class="mb-1 text-[15px] font-semibold text-primary">Appearance</h2>
-        <p class="mb-4 text-[13px] leading-relaxed text-secondary">
-          Choose how Budetau looks. System follows your macOS setting.
-        </p>
-
-        <!-- Segmented control -->
-        <div class="inline-flex gap-[2px] rounded-[10px] bg-[#f1f3f5] dark:bg-border/20 p-[3px]">
-          <button
-            v-for="opt in themeOptions"
-            :key="opt.value"
-            type="button"
-            class="rounded-[8px] px-5 py-[9px] text-[13px] font-semibold transition-all"
-            :class="
-              themeStore.mode === opt.value
-                ? 'bg-card text-primary shadow-[0_1px_2px_rgba(16,24,40,.1)]'
-                : 'text-secondary hover:text-primary'
-            "
-            @click="themeStore.setMode(opt.value)"
-          >
-            {{ opt.label }}
-          </button>
-        </div>
-      </div>
-
-      <!-- ── Accounts card ──────────────────────────────────────────────────── -->
-      <div class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card">
-        <!-- Card header -->
-        <div class="mb-1 flex items-center justify-between">
-          <h2 class="text-[15px] font-semibold text-primary">Accounts</h2>
-          <button
-            type="button"
-            class="flex items-center gap-1.5 rounded-control border border-border bg-bg px-3 py-[7px] text-[12px] font-semibold text-primary transition-colors hover:bg-card"
-            @click="openAddAccount"
-          >
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-              <path
-                d="M5.5 1v9M1 5.5h9"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-              />
-            </svg>
-            Add account
-          </button>
-        </div>
-        <p class="mb-4 text-[13px] leading-relaxed text-secondary">
-          Manage your bank accounts, cards, and wallets.
-        </p>
-
-        <!-- Inline action error (add/edit) -->
-        <div
-          v-if="acctActionError"
-          class="mb-3 flex items-center gap-2 rounded-[9px] border border-red/40 bg-red/10 px-[13px] py-[10px]"
-          role="alert"
-        >
-          <span class="flex-1 text-[12px] leading-relaxed text-red">{{ acctActionError }}</span>
-          <button
-            type="button"
-            class="text-red/60 hover:text-red transition-colors"
-            aria-label="Dismiss error"
-            @click="acctActionError = null"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path
-                d="M9 3L3 9M3 3l6 6"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <!-- Delete error banner -->
-        <div
-          v-if="deleteError"
-          class="mb-3 flex items-center gap-2 rounded-[9px] border border-red/40 bg-red/10 px-[13px] py-[10px]"
-          role="alert"
-        >
-          <span class="flex-1 text-[12px] leading-relaxed text-red">{{ deleteError }}</span>
-          <button
-            type="button"
-            class="text-red/60 hover:text-red transition-colors"
-            aria-label="Dismiss error"
-            @click="deleteError = null"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path
-                d="M9 3L3 9M3 3l6 6"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <!-- Loading state -->
-        <div v-if="accountStore.isLoading" class="py-4 text-center text-[13px] text-secondary">
-          Loading…
-        </div>
-
-        <!-- Empty state -->
-        <div
-          v-else-if="accountStore.data.length === 0"
-          class="rounded-[9px] border border-dashed border-border py-8 text-center"
-        >
-          <p class="text-[13px] text-secondary">No accounts yet.</p>
-          <button
-            type="button"
-            class="mt-2 text-[13px] font-semibold text-accent hover:underline"
-            @click="openAddAccount"
-          >
-            Add your first account
-          </button>
-        </div>
-
-        <!-- Account list -->
-        <ul v-else class="flex flex-col divide-y divide-border/60" role="list">
-          <li
-            v-for="account in accountStore.data"
-            :key="account.id"
-            class="group flex items-center gap-3 py-[11px] first:pt-0 last:pb-0"
-          >
-            <!-- Avatar / initial -->
+            <!-- Segmented control -->
             <div
-              class="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[14px] font-bold"
-              :class="avatarClass(account)"
-              aria-hidden="true"
+              class="inline-flex gap-[2px] rounded-[10px] bg-[#f1f3f5] dark:bg-border/20 p-[3px]"
             >
-              {{ accountInitial(account) }}
+              <button
+                v-for="opt in themeOptions"
+                :key="opt.value"
+                type="button"
+                class="rounded-[8px] px-5 py-[9px] text-[13px] font-semibold transition-all"
+                :class="
+                  themeStore.mode === opt.value
+                    ? 'bg-card text-primary shadow-[0_1px_2px_rgba(16,24,40,.1)]'
+                    : 'text-secondary hover:text-primary'
+                "
+                @click="themeStore.setMode(opt.value)"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ Your data ═════════════════════════════════════════════════════ -->
+      <section>
+        <h3 class="mb-3 px-1 text-[11px] font-bold uppercase tracking-wider text-secondary/70">
+          Your data
+        </h3>
+        <div class="flex flex-col gap-4">
+          <!-- ── Database card ─────────────────────────────────────────────── -->
+          <div
+            class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card"
+          >
+            <!-- Card header -->
+            <div class="mb-1 flex items-center gap-2.5">
+              <div
+                class="flex h-7 w-7 flex-none items-center justify-center rounded-[8px] bg-accent/10"
+              >
+                <svg
+                  width="14"
+                  height="12"
+                  viewBox="0 0 16 13"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="1"
+                    y="1"
+                    width="14"
+                    height="11"
+                    rx="2.5"
+                    stroke="rgb(var(--c-accent))"
+                    stroke-width="2"
+                  />
+                </svg>
+              </div>
+              <span class="text-[15px] font-semibold text-primary">Database</span>
+              <span
+                class="inline-flex items-center gap-[5px] rounded-pill bg-green/10 px-2 py-1 text-[11px] font-semibold text-green"
+              >
+                <span class="h-[6px] w-[6px] rounded-full bg-green"></span>
+                On this Mac
+              </span>
+            </div>
+            <p class="mb-4 text-[13px] leading-relaxed text-secondary">
+              All your data lives in one private file. No accounts, no servers — nothing leaves your
+              device.
+            </p>
+
+            <!-- File location row -->
+            <div
+              class="flex items-center gap-3 rounded-[9px] border border-[#eef0f3] dark:border-border bg-bg px-[14px] py-3"
+            >
+              <!-- DB icon -->
+              <div
+                class="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[8px] bg-accent/10"
+              >
+                <svg
+                  width="16"
+                  height="13"
+                  viewBox="0 0 16 13"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="1"
+                    y="1"
+                    width="14"
+                    height="11"
+                    rx="2.5"
+                    stroke="rgb(var(--c-accent))"
+                    stroke-width="2"
+                  />
+                </svg>
+              </div>
+
+              <div class="min-w-0 flex-1">
+                <p class="mb-[2px] text-[12px] font-medium leading-snug text-secondary">
+                  File location
+                </p>
+                <p v-if="isLoading" class="text-[13px] text-secondary">Loading…</p>
+                <p v-else-if="dbError" class="text-[13px] text-red">{{ dbError }}</p>
+                <p v-else class="num break-all text-[13px] font-medium leading-snug text-primary">
+                  {{ dbPath }}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                class="flex-none rounded-[7px] border border-border bg-card px-3 py-2 text-[12px] font-semibold text-primary whitespace-nowrap transition-colors hover:bg-bg"
+                @click="copyPath"
+              >
+                {{ copied ? '✓ Copied' : 'Copy path' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- ── Accounts card ────────────────────────────────────────────── -->
+          <div
+            class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card"
+          >
+            <!-- Card header -->
+            <div class="mb-1 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div
+                  class="flex h-7 w-7 flex-none items-center justify-center rounded-[8px] bg-accent/10 text-accent"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <rect
+                      x="1"
+                      y="3"
+                      width="12"
+                      height="9"
+                      rx="1.75"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    />
+                    <path d="M1 6h12" stroke="currentColor" stroke-width="1.5" />
+                    <circle cx="10" cy="9" r="0.9" fill="currentColor" />
+                  </svg>
+                </div>
+                <h2 class="text-[15px] font-semibold text-primary">Accounts</h2>
+              </div>
+              <button
+                type="button"
+                class="flex items-center gap-1.5 rounded-control border border-border bg-bg px-3 py-[7px] text-[12px] font-semibold text-primary transition-colors hover:bg-card"
+                @click="openAddAccount"
+              >
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+                  <path
+                    d="M5.5 1v9M1 5.5h9"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                Add account
+              </button>
+            </div>
+            <p class="mb-4 text-[13px] leading-relaxed text-secondary">
+              Manage your bank accounts, cards, and wallets.
+            </p>
+
+            <!-- Inline action error (add/edit) -->
+            <div
+              v-if="acctActionError"
+              class="mb-3 flex items-center gap-2 rounded-[9px] border border-red/40 bg-red/10 px-[13px] py-[10px]"
+              role="alert"
+            >
+              <span class="flex-1 text-[12px] leading-relaxed text-red">{{ acctActionError }}</span>
+              <button
+                type="button"
+                class="text-red/60 hover:text-red transition-colors"
+                aria-label="Dismiss error"
+                @click="acctActionError = null"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M9 3L3 9M3 3l6 6"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
             </div>
 
-            <!-- Name + type -->
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-[13px] font-semibold text-primary leading-snug">
-                {{ account.name }}
+            <!-- Delete error banner -->
+            <div
+              v-if="deleteError"
+              class="mb-3 flex items-center gap-2 rounded-[9px] border border-red/40 bg-red/10 px-[13px] py-[10px]"
+              role="alert"
+            >
+              <span class="flex-1 text-[12px] leading-relaxed text-red">{{ deleteError }}</span>
+              <button
+                type="button"
+                class="text-red/60 hover:text-red transition-colors"
+                aria-label="Dismiss error"
+                @click="deleteError = null"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M9 3L3 9M3 3l6 6"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Loading state -->
+            <div v-if="accountStore.isLoading" class="py-4 text-center text-[13px] text-secondary">
+              Loading…
+            </div>
+
+            <!-- Empty state -->
+            <div
+              v-else-if="accountStore.data.length === 0"
+              class="rounded-[9px] border border-dashed border-border py-8 text-center"
+            >
+              <p class="text-[13px] text-secondary">No accounts yet.</p>
+              <button
+                type="button"
+                class="mt-2 text-[13px] font-semibold text-accent hover:underline"
+                @click="openAddAccount"
+              >
+                Add your first account
+              </button>
+            </div>
+
+            <!-- Account list -->
+            <ul v-else class="flex flex-col divide-y divide-border/60" role="list">
+              <li
+                v-for="account in accountStore.data"
+                :key="account.id"
+                class="group flex items-center gap-3 py-[11px] first:pt-0 last:pb-0"
+              >
+                <!-- Avatar / initial -->
+                <div
+                  class="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[14px] font-bold"
+                  :class="avatarClass(account)"
+                  aria-hidden="true"
+                >
+                  {{ accountInitial(account) }}
+                </div>
+
+                <!-- Name + type -->
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-[13px] font-semibold text-primary leading-snug">
+                    {{ account.name }}
+                  </p>
+                  <p class="text-[11px] text-secondary">{{ typeLabel(account.type) }}</p>
+                </div>
+
+                <!-- Balance -->
+                <span class="num text-[13px] font-semibold text-primary tabular-nums">
+                  {{ formatCents(account.balance, account.currency) }}
+                </span>
+
+                <!-- Row actions (visible on hover / focus-within) -->
+                <div
+                  class="ml-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+                >
+                  <button
+                    type="button"
+                    class="rounded-[6px] border border-border bg-card px-2.5 py-1.5 text-[11px] font-semibold text-secondary hover:text-primary transition-colors"
+                    :aria-label="`Edit ${account.name}`"
+                    @click="startEdit(account)"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-[6px] border border-red/30 bg-red/5 px-2.5 py-1.5 text-[11px] font-semibold text-red hover:bg-red/10 transition-colors"
+                    :aria-label="`Delete ${account.name}`"
+                    @click="requestDelete(account)"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- ── Categories card ───────────────────────────────────────────── -->
+          <CategoryManagerCard />
+
+          <!-- ── Recurring transactions card ─────────────────────────────────── -->
+          <RecurringRulesCard />
+        </div>
+      </section>
+
+      <!-- ═══ Backup & maintenance ══════════════════════════════════════════ -->
+      <section>
+        <h3 class="mb-3 px-1 text-[11px] font-bold uppercase tracking-wider text-secondary/70">
+          Backup &amp; maintenance
+        </h3>
+        <div class="flex flex-col gap-4">
+          <!-- ── Backup & restore card ────────────────────────────────────── -->
+          <div
+            class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card"
+          >
+            <div class="mb-1 flex items-center gap-2.5">
+              <div
+                class="flex h-7 w-7 flex-none items-center justify-center rounded-[8px] bg-accent/10 text-accent"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path
+                    d="M3.5 9.5A2.5 2.5 0 0 1 3 4.55 3.25 3.25 0 0 1 9.4 3.3 2.75 2.75 0 0 1 12.5 6a2.5 2.5 0 0 1-.9 4.75"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M7 6.5v5.5m0 0L5.2 10.2M7 12l1.8-1.8"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <h2 class="text-[15px] font-semibold text-primary">Backup &amp; restore</h2>
+            </div>
+            <p class="mb-4 text-[13px] leading-relaxed text-secondary">
+              Export a timestamped copy of your database, or restore from a backup file.
+            </p>
+
+            <div class="mb-[14px] flex gap-[10px]">
+              <button
+                type="button"
+                class="rounded-control bg-accent px-4 py-[10px] text-[13px] font-semibold text-card transition-colors hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="backupBusy"
+                @click="handleExport"
+              >
+                Export backup…
+              </button>
+              <button
+                type="button"
+                class="rounded-control border border-border bg-card px-4 py-[10px] text-[13px] font-semibold text-primary transition-colors hover:bg-bg disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="backupBusy"
+                @click="requestRestore"
+              >
+                Restore from file…
+              </button>
+            </div>
+
+            <!-- Warning banner -->
+            <div
+              class="flex items-start gap-[10px] rounded-[9px] border border-amber/40 bg-amber/10 px-[13px] py-[11px]"
+            >
+              <div
+                class="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-amber text-[11px] font-bold text-card"
+              >
+                !
+              </div>
+              <p class="text-[12px] leading-relaxed text-amber">
+                Restoring <strong class="font-semibold">overwrites</strong> your current data.
+                Budetau makes an automatic backup first.
               </p>
-              <p class="text-[11px] text-secondary">{{ typeLabel(account.type) }}</p>
             </div>
-
-            <!-- Balance -->
-            <span class="num text-[13px] font-semibold text-primary tabular-nums">
-              {{ formatCents(account.balance, account.currency) }}
-            </span>
-
-            <!-- Row actions (visible on hover / focus-within) -->
-            <div
-              class="ml-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
-            >
-              <button
-                type="button"
-                class="rounded-[6px] border border-border bg-card px-2.5 py-1.5 text-[11px] font-semibold text-secondary hover:text-primary transition-colors"
-                :aria-label="`Edit ${account.name}`"
-                @click="startEdit(account)"
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                class="rounded-[6px] border border-red/30 bg-red/5 px-2.5 py-1.5 text-[11px] font-semibold text-red hover:bg-red/10 transition-colors"
-                :aria-label="`Delete ${account.name}`"
-                @click="requestDelete(account)"
-              >
-                Delete
-              </button>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- ── Categories card ───────────────────────────────────────────── -->
-      <CategoryManagerCard />
-
-      <!-- ── Recurring transactions card ─────────────────────────────────── -->
-      <RecurringRulesCard />
-
-      <!-- ── Backup & restore card ──────────────────────────────────────── -->
-      <div class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card">
-        <h2 class="mb-1 text-[15px] font-semibold text-primary">Backup &amp; restore</h2>
-        <p class="mb-4 text-[13px] leading-relaxed text-secondary">
-          Export a timestamped copy of your database, or restore from a backup file.
-        </p>
-
-        <div class="mb-[14px] flex gap-[10px]">
-          <button
-            type="button"
-            class="rounded-control bg-accent px-4 py-[10px] text-[13px] font-semibold text-card transition-colors hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="backupBusy"
-            @click="handleExport"
-          >
-            Export backup…
-          </button>
-          <button
-            type="button"
-            class="rounded-control border border-border bg-card px-4 py-[10px] text-[13px] font-semibold text-primary transition-colors hover:bg-bg disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="backupBusy"
-            @click="requestRestore"
-          >
-            Restore from file…
-          </button>
-        </div>
-
-        <!-- Warning banner -->
-        <div
-          class="flex items-start gap-[10px] rounded-[9px] border border-amber/40 bg-amber/10 px-[13px] py-[11px]"
-        >
-          <div
-            class="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-amber text-[11px] font-bold text-card"
-          >
-            !
           </div>
-          <p class="text-[12px] leading-relaxed text-amber">
-            Restoring <strong class="font-semibold">overwrites</strong> your current data. Budetau
-            makes an automatic backup first.
-          </p>
+
+          <!-- ── Maintenance card ─────────────────────────────────────────── -->
+          <div
+            class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card"
+          >
+            <div class="mb-1 flex items-center gap-2.5">
+              <div
+                class="flex h-7 w-7 flex-none items-center justify-center rounded-[8px] bg-accent/10 text-accent"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path
+                    d="M12.5 7A5.5 5.5 0 1 1 10.6 3"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                  />
+                  <path
+                    d="M12.5 1.5v3h-3"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <h2 class="text-[15px] font-semibold text-primary">Maintenance</h2>
+            </div>
+            <p class="mb-4 text-[13px] leading-relaxed text-secondary">
+              Rebuild account balances from transaction history.
+            </p>
+
+            <button
+              type="button"
+              class="rounded-control border border-border bg-card px-4 py-[10px] text-[13px] font-semibold text-primary transition-colors hover:bg-bg disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="recomputeBusy"
+              @click="handleRecomputeBalances"
+            >
+              {{ recomputeBusy ? 'Recalculating…' : 'Recalculate balances' }}
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <!-- ── Maintenance card ────────────────────────────────────────────── -->
-      <div class="rounded-card border border-[#eef0f3] dark:border-border bg-card p-5 shadow-card">
-        <h2 class="mb-1 text-[15px] font-semibold text-primary">Maintenance</h2>
-        <p class="mb-4 text-[13px] leading-relaxed text-secondary">
-          Rebuild account balances from transaction history.
-        </p>
-
-        <button
-          type="button"
-          class="rounded-control border border-border bg-card px-4 py-[10px] text-[13px] font-semibold text-primary transition-colors hover:bg-bg disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="recomputeBusy"
-          @click="handleRecomputeBalances"
-        >
-          {{ recomputeBusy ? 'Recalculating…' : 'Recalculate balances' }}
-        </button>
-      </div>
+      <!-- ═══ About ══════════════════════════════════════════════════════════ -->
+      <section>
+        <h3 class="mb-3 px-1 text-[11px] font-bold uppercase tracking-wider text-secondary/70">
+          About
+        </h3>
+        <AboutCard />
+      </section>
     </div>
   </div>
 

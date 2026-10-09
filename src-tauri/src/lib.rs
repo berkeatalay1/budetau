@@ -3,6 +3,7 @@ use std::sync::Mutex;
 use rusqlite::Connection;
 use tauri::Manager;
 
+mod basic;
 mod commands;
 mod db;
 
@@ -22,25 +23,16 @@ pub fn run() {
                 db::resolve_db_path(app.handle()).map_err(Box::<dyn std::error::Error>::from)?;
             let mut conn = Connection::open(&path)?;
             db::init(&conn)?;
-            db::seed_defaults(&conn)?;
-
-            // Catch up any due (or missed/back-dated) recurring occurrences
-            // — e.g. a biweekly paycheck — before the app is usable. Errors
-            // are logged but never block startup.
-            let today: String =
-                conn.query_row("SELECT date('now','localtime');", [], |row| row.get(0))?;
-            match commands::post_due_recurring(&mut conn, &today) {
-                Ok(count) if count > 0 => {
-                    println!("posted {count} due recurring transaction(s) on launch");
-                }
-                Ok(_) => {}
-                Err(e) => eprintln!("failed to post due recurring transactions: {e}"),
-            }
+            basic::initialize(&mut conn)?;
 
             app.manage(DbState(Mutex::new(conn)));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            basic::load_basic_budget,
+            basic::save_basic_budget,
+            basic::write_basic_backup,
+            basic::read_basic_backup,
             commands::get_db_path,
             commands::list_accounts,
             commands::list_categories,
